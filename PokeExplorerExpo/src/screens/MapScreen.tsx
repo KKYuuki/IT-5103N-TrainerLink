@@ -1,39 +1,107 @@
-import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View, Text, ActivityIndicator, Alert, TouchableOpacity, Image } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { generateRandomSpawns, SpawnLocation } from '../utils/spawning';
 
 const MapScreen = () => {
+    const [location, setLocation] = useState<Location.LocationObject | null>(null);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [spawns, setSpawns] = useState<SpawnLocation[]>([]);
+
+    useEffect(() => {
+        (async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                setErrorMsg('Permission to access location was denied');
+                Alert.alert('Permission Denied', 'We need your location to find Pokemon!');
+                return;
+            }
+
+            let location = await Location.getCurrentPositionAsync({});
+            setLocation(location);
+
+            // Generate initial spawns
+            const newSpawns = generateRandomSpawns(location.coords.latitude, location.coords.longitude, 200, 15);
+            setSpawns(newSpawns);
+        })();
+    }, []);
+
+    // ... (errorMsg and loading checks remain same)
+
+    if (!location) {
+        return (
+            <View style={styles.container}>
+                <ActivityIndicator size="large" color="#ff0000" />
+                <Text style={{ marginTop: 10 }}>Accessing GPS...</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <MapView
                 provider={PROVIDER_GOOGLE}
                 style={styles.map}
                 initialRegion={{
-                    latitude: 1.3521, // Default to Singapore for testing
-                    longitude: 103.8198,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                    latitudeDelta: 0.001,
+                    longitudeDelta: 0.001,
+                }}
+                showsUserLocation={true}
+                followsUserLocation={true}
+                showsMyLocationButton={true}
+            >
+                {spawns.map((spawn) => (
+                    <Marker
+                        key={spawn.id}
+                        coordinate={{ latitude: spawn.latitude, longitude: spawn.longitude }}
+                        title={`Pokemon #${spawn.pokemonId}`}
+                    >
+                        <View style={{ width: 50, height: 50 }}>
+                            <Image
+                                source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${spawn.pokemonId}.png` }}
+                                style={{ width: 50, height: 50, resizeMode: 'contain' }}
+                            />
+                        </View>
+                    </Marker>
+                ))}
+            </MapView>
+            <TouchableOpacity
+                style={styles.fab}
+                onPress={() => {
+                    if (location) {
+                        const newSpawns = generateRandomSpawns(location.coords.latitude, location.coords.longitude, 200, 15);
+                        setSpawns(newSpawns);
+                    }
                 }}
             >
-                <Marker
-                    coordinate={{ latitude: 1.3521, longitude: 103.8198 }}
-                    title="Trainer Location"
-                    description="This is you!"
-                />
-            </MapView>
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>RESPAWN</Text>
+            </TouchableOpacity>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        ...StyleSheet.absoluteFillObject,
-        justifyContent: 'flex-end',
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
     },
     map: {
-        ...StyleSheet.absoluteFillObject,
+        width: '100%',
+        height: '100%',
     },
+    fab: {
+        position: 'absolute',
+        bottom: 20,
+        right: 20,
+        backgroundColor: '#ff5722',
+        padding: 15,
+        borderRadius: 30,
+        elevation: 5
+    }
 });
 
 export default MapScreen;

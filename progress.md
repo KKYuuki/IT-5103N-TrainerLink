@@ -19,11 +19,13 @@
 - [x] Create `PokemonDetailScreen` (Stats, Types, Sprites)
 - [x] Update Router/Navigation to include Pokedex flow
 
-## Phase 3: Maps & The "Hunt" (Week 3) (Partially Complete)
+## Phase 3: Maps & The "Hunt" (Week 3) (Complete)
 - [x] Install `react-native-maps` & Configure API Key
 - [x] Create MapScreen (Static Singapore Map)
-- [ ] Implement `generateRandomCoordinates` & Markers
+- [x] Implement `generateRandomCoordinates` & Markers
 - [x] **Migrated to Expo for Stability** 🚀
+- [x] **Implemented High Zoom (1:1 Scale)** 🔭
+- [x] **Added Real-time Geolocation** 🌍
 
 ## Phase 4: AR Lite & Hardware (Week 4)
 - [ ] Install `react-native-vision-camera`
