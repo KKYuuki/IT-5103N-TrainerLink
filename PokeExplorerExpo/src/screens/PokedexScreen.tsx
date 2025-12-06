@@ -8,17 +8,21 @@ import {
     ActivityIndicator,
     TouchableOpacity,
     SafeAreaView,
+    TextInput,
+    Alert,
 } from 'react-native';
-import { getPokemonList, PokemonListResult } from '../services/api';
+import { getPokemonList, getPokemonDetails, PokemonListResult } from '../services/api';
 
 const PokedexScreen = ({ navigation }: any) => {
     const [pokemon, setPokemon] = useState<PokemonListResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searching, setSearching] = useState(false);
 
     const fetchPokemon = async () => {
-        if (loading || !hasMore) return;
+        if (loading || !hasMore || searchQuery.length > 0) return; // Don't infinite scroll while searching
 
         setLoading(true);
         try {
@@ -38,6 +42,27 @@ const PokedexScreen = ({ navigation }: any) => {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSearch = async () => {
+        if (!searchQuery.trim()) return;
+
+        setSearching(true);
+        try {
+            // Try to fetch specific pokemon details
+            const details = await getPokemonDetails(searchQuery.toLowerCase().trim());
+
+            // If successful, navigate directly to details
+            navigation.navigate('PokemonDetail', {
+                pokemonId: details.id,
+                pokemonName: details.name
+            });
+            setSearchQuery(''); // Clear search after successful navigation
+        } catch (error) {
+            Alert.alert('Not Found', `Could not find Pokemon: "${searchQuery}"`);
+        } finally {
+            setSearching(false);
         }
     };
 
@@ -76,6 +101,28 @@ const PokedexScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <View style={styles.searchContainer}>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Search Pokemon (Name or ID)..."
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    onSubmitEditing={handleSearch}
+                    returnKeyType="search"
+                />
+                <TouchableOpacity
+                    style={styles.searchButton}
+                    onPress={handleSearch}
+                    disabled={searching}
+                >
+                    {searching ? (
+                        <ActivityIndicator color="white" size="small" />
+                    ) : (
+                        <Text style={styles.searchButtonText}>Search</Text>
+                    )}
+                </TouchableOpacity>
+            </View>
+
             <FlatList
                 data={pokemon}
                 renderItem={renderItem}
@@ -94,6 +141,32 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f5f5f5',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        padding: 10,
+        backgroundColor: 'white',
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
+        alignItems: 'center',
+    },
+    input: {
+        flex: 1,
+        height: 40,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 20,
+        paddingHorizontal: 15,
+        marginRight: 10,
+    },
+    searchButton: {
+        backgroundColor: '#ff5722',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        borderRadius: 20,
+    },
+    searchButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
     },
     listContent: {
         padding: 10,
