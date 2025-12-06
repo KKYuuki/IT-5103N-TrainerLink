@@ -3,10 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-na
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { usePokemon } from '../context/PokemonContext';
+
 const CatchScreen = ({ route, navigation }: any) => {
     const { pokemonId, pokemonName } = route.params;
     const [permission, requestPermission] = useCameraPermissions();
     const [caught, setCaught] = useState(false);
+    const { markCaught } = usePokemon();
 
     useEffect(() => {
         if (permission && !permission.granted) {
@@ -34,13 +37,14 @@ const CatchScreen = ({ route, navigation }: any) => {
 
     const handleCatch = () => {
         setCaught(true);
+        markCaught(pokemonId); // Save to persistence
         Alert.alert(
             "Gotcha! ⭐",
             `You caught ${pokemonName || 'Pokemon'}!`,
             [
-                { 
-                    text: "Nice!", 
-                    onPress: () => navigation.goBack() 
+                {
+                    text: "Nice!",
+                    onPress: () => navigation.goBack()
                 }
             ]
         );
@@ -60,9 +64,9 @@ const CatchScreen = ({ route, navigation }: any) => {
                     {/* The Pokemon Centered */}
                     <View style={styles.centerContainer}>
                         {!caught && (
-                            <Image 
-                                source={{ uri: imageUrl }} 
-                                style={styles.pokemonImage} 
+                            <Image
+                                source={{ uri: imageUrl }}
+                                style={styles.pokemonImage}
                             />
                         )}
                     </View>
@@ -78,7 +82,7 @@ const CatchScreen = ({ route, navigation }: any) => {
                     </View>
                 </View>
             </CameraView>
-            
+
             {/* Back Button */}
             <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
                 <MaterialIcons name="close" size={30} color="white" />
@@ -92,9 +96,9 @@ const styles = StyleSheet.create({
     camera: { flex: 1 },
     text: { color: 'white', fontSize: 18, textAlign: 'center', marginTop: 50 },
     overlay: { flex: 1, justifyContent: 'space-between', alignItems: 'center', paddingVertical: 40 },
-    header: { 
-        backgroundColor: 'rgba(0,0,0,0.5)', 
-        padding: 10, 
+    header: {
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 10,
         borderRadius: 20,
         marginTop: 40
     },

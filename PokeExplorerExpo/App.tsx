@@ -1,41 +1,44 @@
 import React from 'react';
-import { Button, View, Text, LogBox } from 'react-native';
-
-// Suppress annoying warnings in the app UI
-LogBox.ignoreLogs([
-  'You are initializing Firebase Auth', // Firebase Persistence Warning
-  'Task orphaned for request',          // Common Metro warning
-  'expo-notifications: Android Push',   // Expo Go limitation warning
-  'functionality is not fully supported', // Another Expo Go warning
-  'SafeAreaView has been deprecated',   // Third-party library warning
-]);
+import { View, Text, LogBox, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+// Contexts
 import { UserProvider, useUser } from './src/context/UserContext';
-import { auth } from './src/services/firebaseConfig';
-import { signOut } from 'firebase/auth';
+import { PokemonProvider } from './src/context/PokemonContext';
 
+// Screens
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
 import PokedexScreen from './src/screens/PokedexScreen';
 import PokemonDetailScreen from './src/screens/PokemonDetailScreen';
 import MapScreen from './src/screens/MapScreen';
 import CatchScreen from './src/screens/CatchScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 
+// Suppress annoying warnings
+LogBox.ignoreLogs([
+  'You are initializing Firebase Auth',
+  'Task orphaned for request',
+  'expo-notifications: Android Push',
+  'functionality is not fully supported',
+  'SafeAreaView has been deprecated',
+]);
+
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+// 1. Pokedex Stack (List -> Detail)
 const PokedexStack = () => {
   return (
     <Stack.Navigator>
       <Stack.Screen
         name="PokedexMain"
         component={PokedexScreen}
-        options={{
-          headerShown: false, // Custom header in PokedexScreen handles Notch/Status Bar
-        }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="PokemonDetail"
@@ -46,27 +49,47 @@ const PokedexStack = () => {
   );
 };
 
+// 2. Main Tab Navigator (Map, Pokedex, Profile)
 const MainTabNavigator = () => {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
-      <Tab.Screen name="PokedexTab" component={PokedexStack} options={{ title: 'Pokedex' }} />
-      <Tab.Screen name="MapTab" component={MapScreen} options={{ title: 'Map' }} />
+      <Tab.Screen
+        name="MapTab"
+        component={MapScreen}
+        options={{
+          title: 'Map',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="map" size={size} color={color} />
+        }}
+      />
+      <Tab.Screen
+        name="PokedexTab"
+        component={PokedexStack}
+        options={{
+          title: 'Pokedex',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="grid-on" size={size} color={color} />
+        }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileScreen}
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="person" size={size} color={color} />
+        }}
+      />
     </Tab.Navigator>
   );
 };
 
+// 3. App Navigator (Auth Switch)
 const AppNavigator = () => {
   const { user, loading } = useUser();
 
   if (loading) {
     return (
-      <React.Fragment>
-        <SafeAreaProvider>
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' }}>
-            <Text>Loading Firebase...</Text>
-          </View>
-        </SafeAreaProvider>
-      </React.Fragment>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#ff5722" />
+      </View>
     );
   }
 
@@ -75,7 +98,11 @@ const AppNavigator = () => {
       {user ? (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-          <Stack.Screen name="Catch" component={CatchScreen} options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen
+            name="Catch"
+            component={CatchScreen}
+            options={{ presentation: 'fullScreenModal' }}
+          />
         </Stack.Navigator>
       ) : (
         <Stack.Navigator>
@@ -87,11 +114,14 @@ const AppNavigator = () => {
   );
 };
 
+// 4. Root App Component
 const App = () => {
   return (
     <SafeAreaProvider>
       <UserProvider>
-        <AppNavigator />
+        <PokemonProvider>
+          <AppNavigator />
+        </PokemonProvider>
       </UserProvider>
     </SafeAreaProvider>
   );
