@@ -1,13 +1,15 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { View, Text } from 'react-native';
+import { View, Text, Button } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UserProvider, useUser } from './src/context/UserContext';
+import auth from '@react-native-firebase/auth';
 
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
-import HomeScreen from './src/screens/HomeScreen';
+import PokedexScreen from './src/screens/PokedexScreen';
+import PokemonDetailScreen from './src/screens/PokemonDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -29,7 +31,27 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator>
       {user ? (
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <>
+          <Stack.Screen
+            name="Pokedex"
+            component={PokedexScreen}
+            options={{
+              title: 'PokeExplorer',
+              headerRight: () => (
+                <Button
+                  onPress={() => auth().signOut()}
+                  title="Logout"
+                  color="#f00"
+                />
+              ),
+            }}
+          />
+          <Stack.Screen
+            name="PokemonDetail"
+            component={PokemonDetailScreen}
+            options={({ route }: any) => ({ title: route.params.pokemonName })}
+          />
+        </>
       ) : (
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
