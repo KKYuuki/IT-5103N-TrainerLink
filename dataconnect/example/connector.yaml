@@ -1,0 +1,11 @@
+connectorId: example
+generate:
+  swiftSdk:
+    - outputDir: ..\..\PokeExplorer\FirebaseDataConnectGenerated
+      package: DataConnectGenerated
+  javascriptSdk:
+    - outputDir: ..\..\PokeExplorer\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..\PokeExplorer
+      react: true
+      angular: false

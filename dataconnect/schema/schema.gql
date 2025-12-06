@@ -1,0 +1,55 @@
+type Trainer @table {
+  username: String!
+  email: String!
+  createdAt: Timestamp!
+  avatarUrl: String
+  level: Int
+  experiencePoints: Int
+}
+
+type CritterType @table {
+  name: String!
+  type: String!
+  rarity: String!
+  baseAttack: Int!
+  baseDefense: Int!
+  baseHealth: Int!
+  description: String
+  imageUrl: String
+}
+
+type CritterInstance @table {
+  critterType: CritterType!
+  trainer: Trainer!
+  capturedAt: Timestamp!
+  currentHealth: Int!
+  currentExperience: Int!
+  nickname: String
+  level: Int
+  attackModifier: Int
+  defenseModifier: Int
+}
+
+type ItemType @table {
+  name: String!
+  description: String!
+  effect: String!
+  imageUrl: String
+  usageType: String
+}
+
+type TrainerItem @table(key: ["trainer", "itemType"]) {
+  trainer: Trainer!
+  itemType: ItemType!
+  quantity: Int!
+}
+
+type Battle @table {
+  initiatorTrainer: Trainer!
+  opponentTrainer: Trainer!
+  winnerTrainer: Trainer!
+  battleStartTime: Timestamp!
+  battleEndTime: Timestamp!
+  initiatorCrittersUsed: [UUID]
+  opponentCrittersUsed: [UUID]
+}
