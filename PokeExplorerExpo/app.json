@@ -25,6 +25,28 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow PokeExplorer to access your photos.",
+          "saveToPhotosPermission": "Allow PokeExplorer to save Pokemon to your gallery.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow PokeExplorer to access your camera."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow PokeExplorer to use your location."
+        }
+      ]
+    ]
   }
 }

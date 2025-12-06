@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, Animated, Dimensions } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Gyroscope } from 'expo-sensors';
 import { MaterialIcons } from '@expo/vector-icons';
-
 import { usePokemon } from '../context/PokemonContext';
+
+const { width, height } = Dimensions.get('window');
 
 const CatchScreen = ({ route, navigation }: any) => {
     const { pokemonId, pokemonName } = route.params;
@@ -11,11 +13,80 @@ const CatchScreen = ({ route, navigation }: any) => {
     const [caught, setCaught] = useState(false);
     const { markCaught } = usePokemon();
 
+    // Animation Values
+    const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+    const breath = useRef(new Animated.Value(0)).current;
+
     useEffect(() => {
         if (permission && !permission.granted) {
             requestPermission();
         }
     }, [permission]);
+
+    // Gyroscope Effect (Parallax)
+    useEffect(() => {
+        let subscription: any;
+
+        const subscribe = async () => {
+            const isAvailable = await Gyroscope.isAvailableAsync();
+            if (isAvailable) {
+                Gyroscope.setUpdateInterval(50);
+                subscription = Gyroscope.addListener(data => {
+                    const xOffset = data.y * 150;
+                    const yOffset = data.x * 150;
+
+                    Animated.spring(position, {
+                        toValue: { x: xOffset, y: yOffset },
+                        useNativeDriver: true,
+                        friction: 7,
+                        tension: 40
+                    }).start();
+                });
+            } else {
+                // Fallback for Emulator: Simulated Wiggle
+                Animated.loop(
+                    Animated.sequence([
+                        Animated.timing(position, {
+                            toValue: { x: 10, y: -10 },
+                            duration: 2000,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(position, {
+                            toValue: { x: -10, y: 10 },
+                            duration: 2000,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(position, {
+                            toValue: { x: 0, y: 0 },
+                            duration: 2000,
+                            useNativeDriver: true,
+                        })
+                    ])
+                ).start();
+            }
+        };
+
+        subscribe();
+        return () => subscription && subscription.remove();
+    }, []);
+
+    // Breathing Animation (Floating Loop)
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(breath, {
+                    toValue: -20, // Float up
+                    duration: 1500,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(breath, {
+                    toValue: 0, // Float down
+                    duration: 1500,
+                    useNativeDriver: true,
+                })
+            ])
+        ).start();
+    }, []);
 
     if (!permission) {
         return <View style={styles.container}><Text>Requesting permission...</Text></View>;
@@ -61,12 +132,20 @@ const CatchScreen = ({ route, navigation }: any) => {
                         <Text style={styles.title}>Wild {pokemonName} Appeared!</Text>
                     </View>
 
-                    {/* The Pokemon Centered */}
+                    {/* The Pokemon with AR Effects */}
                     <View style={styles.centerContainer}>
                         {!caught && (
-                            <Image
+                            <Animated.Image
                                 source={{ uri: imageUrl }}
-                                style={styles.pokemonImage}
+                                style={[
+                                    styles.pokemonImage,
+                                    {
+                                        transform: [
+                                            { translateX: position.x },
+                                            { translateY: Animated.add(position.y, breath) } // Combine parallax + breathing
+                                        ]
+                                    }
+                                ]}
                             />
                         )}
                     </View>
@@ -107,6 +186,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         flex: 1,
+        // Allow pokemon to move outside its box slightly
+        overflow: 'visible'
     },
     pokemonImage: {
         width: 300,

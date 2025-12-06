@@ -1,13 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '../context/UserContext';
 import { usePokemon } from '../context/PokemonContext';
 import { MaterialIcons } from '@expo/vector-icons';
-
+import * as MediaLibrary from 'expo-media-library';
+// Use legacy API to avoid downloadAsync deprecation error in SDK 52+
+// @ts-ignore
+import * as FileSystem from 'expo-file-system/legacy';
 import { pokemonNames } from '../utils/pokemonNames';
 
-// Generate 151 Pokemon IDs
+// ... existing constants ...
 const POKEMON_IDS = Array.from({ length: 151 }, (_, i) => i + 1);
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const COLUMNS = 4;
@@ -16,25 +19,65 @@ const ITEM_SIZE = SCREEN_WIDTH / COLUMNS;
 const ProfileScreen = () => {
     const { user } = useUser();
     const { isCaught, caughtPokemon } = usePokemon();
+    const [savingId, setSavingId] = useState<number | null>(null);
+
+    const handleSaveToGallery = async (id: number, name: string) => {
+        try {
+            setSavingId(id);
+            // 1. Request Permission (Write Only to avoid Audio permission error on Android 13+)
+            const { status } = await MediaLibrary.requestPermissionsAsync(true);
+            if (status !== 'granted') {
+                Alert.alert("Permission Denied", "We need access to your gallery to save the Pokemon!");
+                return;
+            }
+
+            // 2. Download Image to Local File
+            const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+            const fileUri = `${FileSystem.documentDirectory}${name}_${id}.png`;
+
+            const { uri } = await FileSystem.downloadAsync(imageUrl, fileUri);
+
+            // 3. Save to Media Library
+            const asset = await MediaLibrary.createAssetAsync(uri);
+            await MediaLibrary.createAlbumAsync("PokeExplorer", asset, false);
+
+            Alert.alert("Saved! 📸", `${name} has been saved to your gallery.`);
+        } catch (error: any) {
+            Alert.alert("Error", "Failed to save image: " + error.message);
+        } finally {
+            setSavingId(null);
+        }
+    };
 
     const renderPokemonItem = ({ item: id }: { item: number }) => {
         const caught = isCaught(id);
         const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
-        const name = pokemonNames[id - 1]; // Array is 0-indexed, IDs are 1-151
+        const name = pokemonNames[id - 1];
 
         return (
             <View style={styles.gridItem}>
-                <View style={[styles.imageContainer, !caught && styles.uncaughtContainer]}>
-                    <Image
-                        source={{ uri: imageUrl }}
-                        style={[styles.pokemonImage, !caught && styles.silhouette]}
-                    />
-                </View>
+                <TouchableOpacity
+                    style={[styles.imageContainer, !caught && styles.uncaughtContainer]}
+                    onPress={() => caught && handleSaveToGallery(id, name)}
+                    disabled={!caught || savingId === id}
+                >
+                    {savingId === id ? (
+                        <ActivityIndicator size="small" color="#ff5722" />
+                    ) : (
+                        <Image
+                            source={{ uri: imageUrl }}
+                            style={[styles.pokemonImage, !caught && styles.silhouette]}
+                        />
+                    )}
+                </TouchableOpacity>
                 <Text style={styles.pokemonId}>#{id.toString().padStart(3, '0')}</Text>
                 <Text style={styles.pokemonName}>{caught ? name : "????"}</Text>
             </View>
         );
     };
+
+    // ... existing return ...
+
 
     return (
         <SafeAreaView style={styles.container}>

@@ -26,13 +26,17 @@
 - [x] **Migrated to Expo for Stability** 🚀
 - [x] Implement Catch Screen Logic via Markers
 
-## Phase 4: AR Lite & Hardware (Week 4) - **IN PROGRESS**
+## Phase 4: AR Lite & Hardware (Week 4) - **COMPLETED**
 - [x] Install `expo-camera` (Replaced `react-native-vision-camera` for Expo)
 - [x] Create CaptureScreen (`CatchScreen.tsx`)
-- [ ] Refine AR Overlay (Sprite Positioning)
-- [ ] Implement Save to Gallery
+- [x] Refine AR Overlay (Gyroscope Parallax & Floating Animation)
+- [x] Implement Save to Gallery (via Profile)
 
-## Phase 5: Social & Polish (Week 5)
+## Phase 5: Social & Polish (Week 5) - **IN PROGRESS**
+- [x] Create PokemonContext (Persistence with AsyncStorage)
+- [x] Create ProfileScreen (Grid & Stats)
+- [x] Implement Catching Logic & Persistence
+- [x] Implement Username/Email Login (Firestore)
 - [ ] Create CommunityScreen (Firebase Realtime DB)
 - [ ] Implement User Profile & Badges
 
