@@ -1,30 +1,58 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../services/firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../services/firebaseConfig';
 
 const LoginScreen = ({ navigation }: any) => {
-    const [email, setEmail] = useState('');
+    const [input, setInput] = useState(''); // Can be email OR username
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
-        if (!email || !password) return;
+        if (!input || !password) return;
+        setLoading(true);
+
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            let emailToUse = input;
+
+            // Check if input is likely an email
+            if (!input.includes('@')) {
+                // It's a username! Look it up.
+                const q = query(collection(db, "users"), where("username", "==", input));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    Alert.alert("Login Failed", "Username not found.");
+                    setLoading(false);
+                    return;
+                }
+
+                // Get the email from the first match
+                emailToUse = querySnapshot.docs[0].data().email;
+            }
+
+            // Sign in using the resolved email
+            await signInWithEmailAndPassword(auth, emailToUse, password);
         } catch (error: any) {
             Alert.alert('Login Error', error.message);
+            setLoading(false);
         }
     };
+
+    if (loading) return <View style={styles.container}><ActivityIndicator size="large" color="#ff5722" /></View>;
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>PokeExplorer Login</Text>
-            <Text style={{ fontSize: 20, color: 'green', textAlign: 'center', marginBottom: 20 }}>Expo Edition!</Text>
+            <Text style={{ fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 20 }}>
+                Enter Email or Trainer Name
+            </Text>
             <TextInput
                 style={styles.input}
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
+                placeholder="Email or Trainer Name"
+                value={input}
+                onChangeText={setInput}
                 autoCapitalize="none"
             />
             <TextInput

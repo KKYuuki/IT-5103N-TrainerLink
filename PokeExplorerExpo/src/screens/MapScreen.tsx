@@ -21,6 +21,8 @@ const MapScreen = ({ navigation }: any) => {
     const [offset, setOffset] = useState({ lat: 0, lng: 0 }); // Manual movement offset
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [spawns, setSpawns] = useState<SpawnLocation[]>([]);
+    const [isMapReady, setIsMapReady] = useState(false);
+    const [hasZoomed, setHasZoomed] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -40,26 +42,26 @@ const MapScreen = ({ navigation }: any) => {
 
             // Trigger spawns at this real location
             triggerSpawns(loc.coords.latitude, loc.coords.longitude);
-
-            // Force map to zoom in immediately
-            if (mapRef.current) {
-                mapRef.current.animateToRegion({
-                    latitude: loc.coords.latitude,
-                    longitude: loc.coords.longitude,
-                    latitudeDelta: 0.001,
-                    longitudeDelta: 0.001,
-                }, 1000);
-            }
         })();
     }, []);
+
+    // Effect to handle initial zoom once both Location and Map are ready
+    useEffect(() => {
+        if (realLocation && isMapReady && !hasZoomed && mapRef.current) {
+            mapRef.current.animateToRegion({
+                latitude: realLocation.coords.latitude,
+                longitude: realLocation.coords.longitude,
+                latitudeDelta: 0.001,
+                longitudeDelta: 0.001,
+            }, 1000);
+            setHasZoomed(true);
+        }
+    }, [realLocation, isMapReady]);
 
     const triggerSpawns = async (lat: number, lng: number) => {
         const newSpawns = generateRandomSpawns(lat, lng, 200, 15);
         setSpawns(newSpawns);
-        await Notifications.scheduleNotificationAsync({
-            content: { title: "Wild Pokemon Appeared! 🌿", body: "Catch them!" },
-            trigger: null,
-        });
+        // ... notification logic ...
     };
 
     const movePlayer = (dLat: number, dLng: number) => {
@@ -99,6 +101,7 @@ const MapScreen = ({ navigation }: any) => {
                 }}
                 showsUserLocation={false} // Hide real blue dot
                 showsMyLocationButton={false}
+                onMapReady={() => setIsMapReady(true)}
             >
                 {/* Custom Player Marker */}
                 <Marker coordinate={{ latitude: playerLat, longitude: playerLng }} title="You">

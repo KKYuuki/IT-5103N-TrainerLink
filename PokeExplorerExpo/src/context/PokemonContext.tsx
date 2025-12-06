@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUser } from './UserContext';
 
 interface PokemonContextType {
     caughtPokemon: number[];
@@ -16,18 +17,28 @@ const PokemonContext = createContext<PokemonContextType>({
 });
 
 export const PokemonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user } = useUser();
     const [caughtPokemon, setCaughtPokemon] = useState<number[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadCaughtPokemon();
-    }, []);
+        if (user) {
+            loadCaughtPokemon(user.uid);
+        } else {
+            setCaughtPokemon([]); // Reset if no user
+            setLoading(false);
+        }
+    }, [user]);
 
-    const loadCaughtPokemon = async () => {
+    const loadCaughtPokemon = async (uid: string) => {
+        setLoading(true);
         try {
-            const stored = await AsyncStorage.getItem('caughtPokemon');
+            const key = `caught_pokemon_${uid}`;
+            const stored = await AsyncStorage.getItem(key);
             if (stored) {
                 setCaughtPokemon(JSON.parse(stored));
+            } else {
+                setCaughtPokemon([]);
             }
         } catch (error) {
             console.error("Failed to load caught pokemon", error);
@@ -37,12 +48,13 @@ export const PokemonProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const markCaught = async (id: number) => {
-        if (caughtPokemon.includes(id)) return;
+        if (!user || caughtPokemon.includes(id)) return;
 
         const updated = [...caughtPokemon, id];
         setCaughtPokemon(updated);
         try {
-            await AsyncStorage.setItem('caughtPokemon', JSON.stringify(updated));
+            const key = `caught_pokemon_${user.uid}`;
+            await AsyncStorage.setItem(key, JSON.stringify(updated));
         } catch (error) {
             console.error("Failed to save caught pokemon", error);
         }
