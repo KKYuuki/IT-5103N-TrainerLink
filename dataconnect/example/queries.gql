@@ -1,0 +1,74 @@
+mutation CreateCritterInstance(
+  $critterTypeId: UUID!
+  $trainerId: UUID!
+  $attackModifier: Int
+  $capturedAt: Timestamp!
+  $currentExperience: Int!
+  $currentHealth: Int!
+  $defenseModifier: Int
+  $level: Int
+  $nickname: String
+) @auth(level: USER) {
+  critterInstance_insert(
+    data: {
+      critterTypeId: $critterTypeId
+      trainerId: $trainerId
+      attackModifier: $attackModifier
+      capturedAt: $capturedAt
+      currentExperience: $currentExperience
+      currentHealth: $currentHealth
+      defenseModifier: $defenseModifier
+      level: $level
+      nickname: $nickname
+    }
+  ) {
+    id
+  }
+}
+
+query GetCritterInstancesByTrainer($trainerId: UUID!) @auth(level: USER) {
+  critterInstances(where: { trainerId: { eq: $trainerId } }) {
+    id
+    critterType {
+      name
+      description
+      imageUrl
+    }
+    attackModifier
+    defenseModifier
+    currentHealth
+    currentExperience
+    level
+    nickname
+  }
+}
+
+mutation UpdateCritterInstance(
+  $id: UUID!
+  $attackModifier: Int
+  $currentHealth: Int
+  $currentExperience: Int
+  $defenseModifier: Int
+  $level: Int
+  $nickname: String
+) @auth(level: USER) {
+  critterInstance_update(
+    id: $id
+    data: {
+      attackModifier: $attackModifier
+      currentHealth: $currentHealth
+      currentExperience: $currentExperience
+      defenseModifier: $defenseModifier
+      level: $level
+      nickname: $nickname
+    }
+  ) {
+    id
+  }
+}
+
+mutation DeleteCritterInstance($id: UUID!) @auth(level: USER) {
+  critterInstance_delete(id: $id) {
+    id
+  }
+}

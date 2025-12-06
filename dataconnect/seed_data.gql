@@ -1,0 +1,76 @@
+mutation CreateSeedData @transaction @auth(level: USER, insecureReason: "Seed data creation is only for development and testing") {
+  critterType_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      baseAttack: 50,
+      baseDefense: 30,
+      baseHealth: 80,
+      description: "A small, cute critter.",
+      imageUrl: "https://example.com/small_critter.png",
+      name: "Small Critter",
+      rarity: "Common",
+      type: "Normal"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      baseAttack: 70,
+      baseDefense: 50,
+      baseHealth: 60,
+      description: "A strong, fierce critter.",
+      imageUrl: "https://example.com/strong_critter.png",
+      name: "Strong Critter",
+      rarity: "Uncommon",
+      type: "Fighting"
+    }
+  ])
+  itemType_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440002",
+      description: "A potion that restores health.",
+      effect: "Restores 50 health points.",
+      imageUrl: "https://example.com/health_potion.png",
+      name: "Health Potion",
+      usageType: "Battle"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440003",
+      description: "A potion that increases attack.",
+      effect: "Increases attack by 20 points.",
+      imageUrl: "https://example.com/attack_potion.png",
+      name: "Attack Potion",
+      usageType: "Battle"
+    }
+  ])
+  trainer_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440004",
+      avatarUrl: "https://example.com/trainer1.png",
+      createdAt: "2024-01-01T00:00:00Z",
+      email: "trainer1@example.com",
+      experiencePoints: 100,
+      level: 5,
+      username: "Trainer1"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440005",
+      avatarUrl: "https://example.com/trainer2.png",
+      createdAt: "2024-01-01T00:00:00Z",
+      email: "trainer2@example.com",
+      experiencePoints: 150,
+      level: 7,
+      username: "Trainer2"
+    }
+  ])
+  trainerItem_insertMany(data: [
+    {
+      trainerId: "550e8400-e29b-41d4-a716-446655440004",
+      itemTypeId: "550e8400-e29b-41d4-a716-446655440002",
+      quantity: 3
+    },
+    {
+      trainerId: "550e8400-e29b-41d4-a716-446655440005",
+      itemTypeId: "550e8400-e29b-41d4-a716-446655440003",
+      quantity: 2
+    }
+  ])
+}
