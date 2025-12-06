@@ -1,4 +1,56 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# PokeExplorer (TrainerLink Setup)
+
+This is a React Native project designed as a **Pokemon Go replica**, featuring agentic coding integration (Google Antigravity), Firebase Authentication, and a future map-based gameplay loop.
+
+## 📋 Prerequisites
+Ensure you have the following installed before running the project:
+
+- **Node.js**: v20 or higher
+- **JDK**: Java 17 (specifically Eclipse Adoptium Temurin is recommended)
+- **Android SDK**: API Level 30 (minimum) and 35 (compile/target)
+- **React Native CLI**: `npm install -g react-native-cli`
+
+## 🚀 Getting Started
+
+### 1. Install Dependencies
+Run the following inside the project root:
+```bash
+npm install
+```
+
+### 2. Configure Firebase (Important)
+This project requires a `google-services.json` file.
+- Place your `google-services.json` file inside `android/app/`.
+- Ensure the package name inside the JSON is `com.pokeexplorer`.
+
+### 3. Build & Run (Android)
+Start the Metro Bundler:
+```bash
+npm start
+```
+Run the Android App:
+```bash
+npx react-native run-android
+```
+
+### ⚠️ Common Troubleshooting
+
+**"Filename longer than 260 characters" Error:**
+This project forces `newArchEnabled=false` in `android/gradle.properties` to avoid Windows path length issues. If you encounter this error, move the project folder to a shorter path (e.g., `C:\PokeExplorer`).
+
+**"Stuck on Splash Screen" (Physical Device):**
+If the app launches but freezes on the logo, your device cannot reach the Metro server. Run:
+```bash
+adb reverse tcp:8081 tcp:8081
+```
+(Ensure `adb` is in your PATH or use the full path to `platform-tools`).
+
+## 🛠 Features (Phase 1 Status)
+- ✅ Project Scaffolding (React Native 0.82)
+- ✅ Firebase Authentication (Login/Signup)
+- ✅ Navigation (React Navigation Native Stack)
+- ✅ User Session Management (UserContext)
+- ✅ Android Build Configuration (Gradle 9.0, Android 15/API 35)
 
 # Getting Started
 

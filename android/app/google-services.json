@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "106837492446",
+    "project_id": "pokeexplorer-trainerlink",
+    "storage_bucket": "pokeexplorer-trainerlink.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:106837492446:android:96f144b80147bd37d4b84f",
+        "android_client_info": {
+          "package_name": "com.pokeexplorer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9YFol8BI5BkCUUcers18gAhKbpbI5ONE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
