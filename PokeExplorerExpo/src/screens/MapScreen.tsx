@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, Alert, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { StyleSheet, View, Text, ActivityIndicator, Alert, TouchableOpacity, Image, Platform } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
+import { MaterialIcons } from '@expo/vector-icons';
 import { generateRandomSpawns, SpawnLocation } from '../utils/spawning';
 
-// Configure notifications to show even when app is in foreground
+// Configure notifications
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
         shouldShowAlert: true,
@@ -14,87 +15,134 @@ Notifications.setNotificationHandler({
     }),
 });
 
-const MapScreen = () => {
-    const [location, setLocation] = useState<Location.LocationObject | null>(null);
+const MapScreen = ({ navigation }: any) => {
+    const mapRef = useRef<MapView>(null);
+    const [realLocation, setRealLocation] = useState<Location.LocationObject | null>(null);
+    const [offset, setOffset] = useState({ lat: 0, lng: 0 }); // Manual movement offset
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [spawns, setSpawns] = useState<SpawnLocation[]>([]);
 
     useEffect(() => {
         (async () => {
-            // 1. Request Map Permissions
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 setErrorMsg('Permission to access location was denied');
-                Alert.alert('Permission Denied', 'We need your location to find Pokemon!');
                 return;
             }
 
-            // 2. Request Notification Permissions
             const { status: notifStatus } = await Notifications.requestPermissionsAsync();
-            if (notifStatus !== 'granted') {
-                Alert.alert('Permission Denied', 'Enable notifications to know when Pokemon appear!');
+
+            let loc = await Location.getCurrentPositionAsync({});
+            setRealLocation(loc);
+
+            // Set initial offset to 0 so "You" are at real location
+            setOffset({ lat: 0, lng: 0 });
+
+            // Trigger spawns at this real location
+            triggerSpawns(loc.coords.latitude, loc.coords.longitude);
+
+            // Force map to zoom in immediately
+            if (mapRef.current) {
+                mapRef.current.animateToRegion({
+                    latitude: loc.coords.latitude,
+                    longitude: loc.coords.longitude,
+                    latitudeDelta: 0.001,
+                    longitudeDelta: 0.001,
+                }, 1000);
             }
-
-            // 3. Get Location
-            let location = await Location.getCurrentPositionAsync({});
-            setLocation(location);
-
-            // 4. Generate initial spawns (15 Pokemon, 200m radius)
-            triggerSpawns(location.coords.latitude, location.coords.longitude);
         })();
     }, []);
 
     const triggerSpawns = async (lat: number, lng: number) => {
         const newSpawns = generateRandomSpawns(lat, lng, 200, 15);
         setSpawns(newSpawns);
-
-        // Schedule Notification
         await Notifications.scheduleNotificationAsync({
-            content: {
-                title: "Wild Pokemon Appeared! 🌿",
-                body: "15 new Pokemon have spawned nearby. Catch them!",
-            },
-            trigger: null, // Show immediately
+            content: { title: "Wild Pokemon Appeared! 🌿", body: "Catch them!" },
+            trigger: null,
         });
     };
 
-    if (errorMsg) {
-        return (
-            <View style={styles.container}>
-                <Text>{errorMsg}</Text>
-            </View>
-        );
-    }
+    const movePlayer = (dLat: number, dLng: number) => {
+        setOffset(prev => ({ lat: prev.lat + dLat, lng: prev.lng + dLng }));
+    };
 
-    if (!location) {
-        return (
-            <View style={styles.container}>
-                <ActivityIndicator size="large" color="#ff0000" />
-                <Text style={{ marginTop: 10 }}>Accessing GPS...</Text>
-            </View>
-        );
-    }
+    const recenterMap = () => {
+        if (realLocation && mapRef.current) {
+            const playerLat = realLocation.coords.latitude + offset.lat;
+            const playerLng = realLocation.coords.longitude + offset.lng;
+            mapRef.current.animateToRegion({
+                latitude: playerLat,
+                longitude: playerLng,
+                latitudeDelta: 0.001,
+                longitudeDelta: 0.001,
+            });
+        }
+    };
+
+    if (errorMsg) return <View style={styles.container}><Text>{errorMsg}</Text></View>;
+    if (!realLocation) return <View style={styles.container}><ActivityIndicator size="large" color="#ff0000" /><Text>GPS Locking...</Text></View>;
+
+    const playerLat = realLocation.coords.latitude + offset.lat;
+    const playerLng = realLocation.coords.longitude + offset.lng;
 
     return (
         <View style={styles.container}>
             <MapView
+                ref={mapRef}
                 provider={PROVIDER_GOOGLE}
                 style={styles.map}
                 initialRegion={{
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                    latitudeDelta: 0.001, // High Zoom (1:1 Scale)
+                    latitude: playerLat,
+                    longitude: playerLng,
+                    latitudeDelta: 0.001,
                     longitudeDelta: 0.001,
                 }}
-                showsUserLocation={true}
-                followsUserLocation={true}
-                showsMyLocationButton={true}
+                showsUserLocation={false} // Hide real blue dot
+                showsMyLocationButton={false}
             >
+                {/* Custom Player Marker */}
+                <Marker coordinate={{ latitude: playerLat, longitude: playerLng }} title="You">
+                    <View style={styles.playerMarker}>
+                        <View style={styles.playerDot} />
+                    </View>
+                </Marker>
+
+                {/* Restored Spawns rendering */}
                 {spawns.map((spawn) => (
                     <Marker
-                        key={spawn.id}
+                        key={`${spawn.id}-${spawn.pokemonId}_v3`}
                         coordinate={{ latitude: spawn.latitude, longitude: spawn.longitude }}
-                        title={`Pokemon #${spawn.pokemonId}`}
+                        anchor={{ x: 0.5, y: 0.5 }}
+                        tracksViewChanges={true}
+                        onPress={() => {
+                            // Calculate distance between Player and Pokemon
+                            const playerLat = realLocation?.coords.latitude! + offset.lat;
+                            const playerLng = realLocation?.coords.longitude! + offset.lng;
+
+                            // Haversine approximation for short distances
+                            const R = 6371e3; // metres
+                            const φ1 = playerLat * Math.PI / 180;
+                            const φ2 = spawn.latitude * Math.PI / 180;
+                            const Δφ = (spawn.latitude - playerLat) * Math.PI / 180;
+                            const Δλ = (spawn.longitude - playerLng) * Math.PI / 180;
+
+                            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                                Math.cos(φ1) * Math.cos(φ2) *
+                                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+                            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                            const distance = R * c;
+
+                            if (distance > 30) { // 30 meters range
+                                Alert.alert("Too Far!", `Get closer to interact! (${Math.round(distance)}m away)`);
+                                return;
+                            }
+
+                            // @ts-ignore - Navigate to Root Stack Screen
+                            navigation.navigate('Catch', {
+                                pokemonId: spawn.pokemonId,
+                                pokemonName: 'Pokemon'
+                            });
+                        }}
                     >
                         <View style={{ width: 50, height: 50 }}>
                             <Image
@@ -105,13 +153,34 @@ const MapScreen = () => {
                     </Marker>
                 ))}
             </MapView>
+
+            {/* Recenter Button (Styled to look like Native Google Maps button) */}
+            <TouchableOpacity style={styles.recenterBtn} onPress={recenterMap}>
+                <MaterialIcons name="my-location" size={24} color="black" />
+            </TouchableOpacity>
+
+            {/* D-Pad Controls */}
+            <View style={styles.dpadContainer}>
+                <TouchableOpacity style={styles.dpadBtn} onPress={() => movePlayer(0.0001, 0)}>
+                    <MaterialIcons name="keyboard-arrow-up" size={30} color="black" />
+                </TouchableOpacity>
+                <View style={styles.dpadRow}>
+                    <TouchableOpacity style={styles.dpadBtn} onPress={() => movePlayer(0, -0.0001)}>
+                        <MaterialIcons name="keyboard-arrow-left" size={30} color="black" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.dpadBtn} onPress={() => movePlayer(0, 0.0001)}>
+                        <MaterialIcons name="keyboard-arrow-right" size={30} color="black" />
+                    </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.dpadBtn} onPress={() => movePlayer(-0.0001, 0)}>
+                    <MaterialIcons name="keyboard-arrow-down" size={30} color="black" />
+                </TouchableOpacity>
+            </View>
+
+            {/* Respawn Button */}
             <TouchableOpacity
                 style={styles.fab}
-                onPress={() => {
-                    if (location) {
-                        triggerSpawns(location.coords.latitude, location.coords.longitude);
-                    }
-                }}
+                onPress={() => triggerSpawns(playerLat, playerLng)}
             >
                 <Text style={{ color: 'white', fontWeight: 'bold' }}>RESPAWN</Text>
             </TouchableOpacity>
@@ -120,15 +189,41 @@ const MapScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
+    container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    map: { ...StyleSheet.absoluteFillObject },
+    playerMarker: {
+        width: 20, height: 20, borderRadius: 10,
+        backgroundColor: 'rgba(0,0,255,0.3)',
+        justifyContent: 'center', alignItems: 'center',
+        borderWidth: 1, borderColor: 'blue'
+    },
+    playerDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: 'blue' },
+    recenterBtn: {
+        position: 'absolute',
+        top: 60, // Pushed down as requested
+        right: 20,
+        backgroundColor: 'white',
+        padding: 12,
+        borderRadius: 30, // Circle
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        zIndex: 10
+    },
+    dpadContainer: {
+        position: 'absolute',
+        bottom: 100, // Above Respawn button
+        left: 20,
         alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        borderRadius: 20,
+        padding: 5
     },
-    map: {
-        width: '100%',
-        height: '100%',
-    },
+    dpadRow: { flexDirection: 'row' },
+    dpadBtn: { padding: 10 },
+    btnText: { fontSize: 20 },
     fab: {
         position: 'absolute',
         bottom: 20,

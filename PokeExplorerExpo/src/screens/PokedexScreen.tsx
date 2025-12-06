@@ -10,8 +10,13 @@ import {
     SafeAreaView,
     TextInput,
     Alert,
+    Platform,
+    StatusBar
 } from 'react-native';
 import { getPokemonList, getPokemonDetails, PokemonListResult } from '../services/api';
+import { auth } from '../services/firebaseConfig';
+import { signOut } from 'firebase/auth';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const PokedexScreen = ({ navigation }: any) => {
     const [pokemon, setPokemon] = useState<PokemonListResult[]>([]);
@@ -22,7 +27,7 @@ const PokedexScreen = ({ navigation }: any) => {
     const [searching, setSearching] = useState(false);
 
     const fetchPokemon = async () => {
-        if (loading || !hasMore || searchQuery.length > 0) return; // Don't infinite scroll while searching
+        if (loading || !hasMore || searchQuery.length > 0) return;
 
         setLoading(true);
         try {
@@ -50,15 +55,12 @@ const PokedexScreen = ({ navigation }: any) => {
 
         setSearching(true);
         try {
-            // Try to fetch specific pokemon details
             const details = await getPokemonDetails(searchQuery.toLowerCase().trim());
-
-            // If successful, navigate directly to details
             navigation.navigate('PokemonDetail', {
                 pokemonId: details.id,
                 pokemonName: details.name
             });
-            setSearchQuery(''); // Clear search after successful navigation
+            setSearchQuery('');
         } catch (error) {
             Alert.alert('Not Found', `Could not find Pokemon: "${searchQuery}"`);
         } finally {
@@ -101,6 +103,14 @@ const PokedexScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Custom Header with Safe Area Handling */}
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Pokedex</Text>
+                <TouchableOpacity onPress={() => signOut(auth)} style={styles.logoutBtn}>
+                    <MaterialIcons name="logout" size={24} color="red" />
+                </TouchableOpacity>
+            </View>
+
             <View style={styles.searchContainer}>
                 <TextInput
                     style={styles.input}
@@ -118,7 +128,7 @@ const PokedexScreen = ({ navigation }: any) => {
                     {searching ? (
                         <ActivityIndicator color="white" size="small" />
                     ) : (
-                        <Text style={styles.searchButtonText}>Search</Text>
+                        <MaterialIcons name="search" size={24} color="white" />
                     )}
                 </TouchableOpacity>
             </View>
@@ -141,6 +151,25 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f5f5f5',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, // Extra padding for Android Status Bar
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        backgroundColor: 'white',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    logoutBtn: {
+        padding: 5,
     },
     searchContainer: {
         flexDirection: 'row',
@@ -160,13 +189,8 @@ const styles = StyleSheet.create({
     },
     searchButton: {
         backgroundColor: '#ff5722',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
+        padding: 10,
         borderRadius: 20,
-    },
-    searchButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
     },
     listContent: {
         padding: 10,

@@ -19,16 +19,17 @@
 - [x] Create `PokemonDetailScreen` (Stats, Types, Sprites)
 - [x] Update Router/Navigation to include Pokedex flow
 
-## Phase 3: Maps & The "Hunt" (Week 3)
+## Phase 3: Maps & The "Hunt" (Week 3) - **COMPLETED**
 - [x] Install `react-native-maps` & Configure API Key
 - [x] Create MapScreen
 - [x] Implement `generateRandomCoordinates` & Markers
 - [x] **Migrated to Expo for Stability** 🚀
+- [x] Implement Catch Screen Logic via Markers
 
-## Phase 4: AR Lite & Hardware (Week 4)
-- [ ] Install `react-native-vision-camera`
-- [ ] Create CaptureScreen with Camera View
-- [ ] Implement AR Overlay (Sprite)
+## Phase 4: AR Lite & Hardware (Week 4) - **IN PROGRESS**
+- [x] Install `expo-camera` (Replaced `react-native-vision-camera` for Expo)
+- [x] Create CaptureScreen (`CatchScreen.tsx`)
+- [ ] Refine AR Overlay (Sprite Positioning)
 - [ ] Implement Save to Gallery
 
 ## Phase 5: Social & Polish (Week 5)
