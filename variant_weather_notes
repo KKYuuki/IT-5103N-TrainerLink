@@ -1,0 +1,29 @@
+# Creature Variant & Weather System Notes
+
+This file outlines design concepts and early testing notes for shiny-style variants and weather-influenced creature spawns in the environment.
+
+## Shiny Variant System
+- Shiny creatures have a very low encounter rate to increase rarity and excitement.
+- Visual differences include alternate color palettes and a subtle particle glow.
+- Encounter animation should highlight the rarity with a special sparkle effect.
+- Players should be able to favorite or “mark” shiny captures distinctly in the journal.
+- Consider implementing limited-time shiny events to increase spawn chances.
+
+## Weather-Based Spawn Behavior
+- Local weather data is used to influence creature types appearing in the area.
+- Rainy weather boosts Water and Electric-type creature spawns.
+- Sunny or clear weather boosts Fire and Grass-type spawns.
+- Windy weather increases Flying-type encounters.
+- Stormy weather introduces rare, high-power variants with boosted stats.
+
+## Observations
+- Weather-based spawns feel dynamic and increase exploration.
+- Shiny encounter rates need fine-tuning to avoid being too rare or too common.
+- Players react positively to visible weather effects on the map.
+
+## Future Ideas
+- Add seasonal shiny variants (e.g., special colors during holidays).
+- Introduce weather-exclusive evolutions requiring specific conditions.
+- Implement a “Forecast Radar” feature so players can plan hunts based on weather shifts.
+
+— System design log for the **TrainerLink AR Project**
