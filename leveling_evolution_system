@@ -1,0 +1,29 @@
+# Leveling & Evolution System Notes
+
+This file contains design concepts for creature progression, leveling, and evolution mechanics in the AR environment.
+
+## Leveling System
+- XP gained through catching, exploration, battles, and companion walking.
+- Creatures have growth stages affecting size, appearance, and abilities.
+- Experience multipliers for rare, shiny, or event-exclusive creatures.
+
+## Evolution System
+- Branching evolutions based on:
+  - Weather conditions  
+  - Time of day  
+  - Region or habitat  
+  - Creature mood or personality  
+  - Held items or special triggers
+- Special “mythic evolutions” require rare events or multi-step conditions.
+- Evolution animations should be visually rewarding and highlight rarity.
+
+## Observations
+- Branching evolution increases strategic depth.
+- Player engagement improves when evolution requires exploration or special conditions.
+
+## Future Ideas
+- Introduce “temporary evolutions” triggered by AR events.
+- Cross-region evolution challenges.
+- Unlock hidden abilities after completing evolution conditions.
+
+— System design log for the **TrainerLink AR Project**
