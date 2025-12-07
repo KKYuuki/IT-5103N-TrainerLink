@@ -70,49 +70,25 @@ npm start
 yarn start
 ```
 
-## Step 2: Build and run your app
+## Step 2: Run with Expo
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+This project uses **Expo**. You do not need to install Android Studio or Xcode just to run the app on your physical device.
 
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+### 1. Start the Development Server
+Run the following command in the terminal:
+```bash
+npx expo start
 ```
+This will launch the Metro Bundler UI.
 
-### iOS
+### 2. Run on Device
+*   **Android**: Install **Expo Go** from the Play Store. Scan the QR code.
+*   **iOS**: Install **Expo Go** from the App Store. Open your Camera app and scan the QR code.
+    *   *Note*: On iOS, you may need to use `--tunnel` if you are on a different Wi-Fi network: `npx expo start --tunnel`.
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+### 3. Run on Simulator/Emulator
+*   Press `a` in the terminal to open on Android Emulator.
+*   Press `i` to open on iOS Simulator (requires macOS + Xcode).
 
 ## Step 3: Modify your app
 
