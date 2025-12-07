@@ -1,0 +1,23 @@
+# Creature Habitat & Region Notes
+
+This file contains design concepts for creature habitats, regional variants, and environmental spawns in the AR environment.
+
+## Habitat & Region System
+- Different regions (forest, city, beach, mountain, cave) affect spawn pools.
+- Certain creatures appear only in specific habitats or during specific weather.
+- Time-of-day spawns: night-only, dusk-boosted, morning-active creatures.
+- Rare “roaming creatures” migrate between regions, encouraging exploration.
+- Regional variants feature slightly different colors, markings, or sizes.
+
+## Observations
+- Players enjoy discovering creatures unique to each area.
+- Habitat-based spawns increase replay value and exploration motivation.
+- Migration patterns add unpredictability and excitement.
+
+## Future Ideas
+- Seasonal region changes affecting which creatures appear.
+- Mini-habitats inside AR spaces (e.g., ponds, nests, caves).
+- Implement rare environmental events triggering unique spawns.
+
+— System design log for the **TrainerLink AR Project**
+
