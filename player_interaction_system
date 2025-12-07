@@ -1,0 +1,25 @@
+# Multiplayer & Trading System Notes
+
+This file contains design concepts for multiplayer interactions, trading, and cooperative gameplay in the AR environment.
+
+## Trading System
+- Local Bluetooth or proximity-based trading between players.
+- Limited daily trade slots to balance economy.
+- Trading rewards or bonuses for completing certain collections.
+
+## Multiplayer Interaction
+- AR shared spaces where multiple players see and interact with the same creature.
+- Co-op capture events for rare or powerful creatures.
+- Friend system with gifting, challenges, and leaderboards.
+
+## Observations
+- Shared AR experiences increase social engagement.
+- Players enjoy cooperative capture events and friendly competition.
+- Proper balancing ensures trading does not break progression.
+
+## Future Ideas
+- Implement player arenas for battles and contests.
+- Cross-region trading events.
+- Introduce guilds or teams for cooperative AR challenges.
+
+— System design log for the **TrainerLink AR Project**
