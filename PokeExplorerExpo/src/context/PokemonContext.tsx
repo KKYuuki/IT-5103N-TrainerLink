@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db } from '../services/firebaseConfig';
 import { useUser } from './UserContext';
 
 interface PokemonContextType {
@@ -25,7 +26,7 @@ export const PokemonProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (user) {
             loadCaughtPokemon(user.uid);
         } else {
-            setCaughtPokemon([]); // Reset if no user
+            setCaughtPokemon([]);
             setLoading(false);
         }
     }, [user]);
@@ -33,10 +34,16 @@ export const PokemonProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const loadCaughtPokemon = async (uid: string) => {
         setLoading(true);
         try {
-            const key = `caught_pokemon_${uid}`;
-            const stored = await AsyncStorage.getItem(key);
-            if (stored) {
-                setCaughtPokemon(JSON.parse(stored));
+            const userRef = doc(db, "users", uid);
+            const docSnap = await getDoc(userRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.caughtPokemon && Array.isArray(data.caughtPokemon)) {
+                    setCaughtPokemon(data.caughtPokemon);
+                } else {
+                    setCaughtPokemon([]);
+                }
             } else {
                 setCaughtPokemon([]);
             }
@@ -50,13 +57,22 @@ export const PokemonProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const markCaught = async (id: number) => {
         if (!user || caughtPokemon.includes(id)) return;
 
+        // Optimistic Update
         const updated = [...caughtPokemon, id];
         setCaughtPokemon(updated);
+
         try {
-            const key = `caught_pokemon_${user.uid}`;
-            await AsyncStorage.setItem(key, JSON.stringify(updated));
+            const userRef = doc(db, "users", user.uid);
+            // Try to update specifically
+            await updateDoc(userRef, {
+                caughtPokemon: arrayUnion(id)
+            }).catch(async (err) => {
+                // If doc doesn't exist or other error, try setDoc with merge
+                await setDoc(userRef, { caughtPokemon: arrayUnion(id) }, { merge: true });
+            });
         } catch (error) {
             console.error("Failed to save caught pokemon", error);
+            // Revert on failure? For now, we keep optimistic state to avoid UI flicker
         }
     };
 

@@ -18,6 +18,7 @@ import PokemonDetailScreen from './src/screens/PokemonDetailScreen';
 import MapScreen from './src/screens/MapScreen';
 import CatchScreen from './src/screens/CatchScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import CommunityScreen from './src/screens/CommunityScreen';
 
 // Suppress annoying warnings
 LogBox.ignoreLogs([
@@ -41,6 +42,14 @@ const MainTabNavigator = () => {
         options={{
           title: 'Map',
           tabBarIcon: ({ color, size }) => <MaterialIcons name="map" size={size} color={color} />
+        }}
+      />
+      <Tab.Screen
+        name="CommunityTab"
+        component={CommunityScreen}
+        options={{
+          title: 'Community',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="people" size={size} color={color} />
         }}
       />
       <Tab.Screen

@@ -9,7 +9,8 @@ import {
     SafeAreaView,
     TouchableOpacity,
     Alert,
-    Platform
+    Platform,
+    Share
 } from 'react-native';
 import { getPokemonDetails, PokemonDetail, getPokemonSpecies, getEvolutionChain, EvolutionChain, EvolutionNode } from '../services/api';
 import { usePokemon } from '../context/PokemonContext';
@@ -62,6 +63,18 @@ const PokemonDetailScreen = ({ route }: any) => {
 
     const getTypeColor = (type: string) => {
         return TYPE_COLORS[type.toLowerCase()] || '#ee1515';
+    };
+
+    const handleShare = async () => {
+        if (!details) return;
+        try {
+            await Share.share({
+                message: `Check out ${details.name.toUpperCase()} (#${details.id}) in PokeExplorer! 🐾\nWeight: ${details.weight / 10}kg\nHeight: ${details.height / 10}m`,
+                title: `Share ${details.name}`
+            });
+        } catch (error: any) {
+            Alert.alert("Share failed", error.message);
+        }
     };
 
     const handleSaveToGallery = async () => {
@@ -199,6 +212,11 @@ const PokemonDetailScreen = ({ route }: any) => {
 
                             {/* Right: Camera + ID */}
                             <View style={styles.headerRight}>
+                                {/* Share Button */}
+                                <TouchableOpacity onPress={handleShare} style={{ marginRight: 15 }}>
+                                    <MaterialIcons name="share" size={28} color="white" />
+                                </TouchableOpacity>
+
                                 <TouchableOpacity onPress={handleSaveToGallery} disabled={saving}>
                                     {saving ? (
                                         <ActivityIndicator size="small" color="white" />
