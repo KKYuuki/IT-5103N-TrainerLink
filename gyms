@@ -1,0 +1,21 @@
+# Gym System Notes
+
+This file outlines design concepts for Gyms and challenges.
+
+## Gym Features
+- Gyms are AR locations tied to real-world landmarks.
+- Each Gym specializes in a type (Water, Fire, Grass, Electric, etc.).
+- Players complete challenges or puzzles to “claim” Gym badges.
+- Gyms can have rotating daily or weekly challenges to encourage repeat visits.
+
+## Observations
+- Type-specific Gyms create strategy and exploration opportunities.
+- AR interactions (scanning, tapping, gestures) make challenges engaging.
+- Gym leader aesthetics and animations reinforce creature lore and AR immersion.
+
+## Future Ideas
+- Implement cooperative Gym battles with friends to unlock rare creatures.
+- Seasonal Gym events with special themed challenges.
+- Gym leader customization and progression for repeatable content.
+
+— System design log for the **TrainerLink AR Project**
