@@ -13,7 +13,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow PokeExplorer to access your camera to catch Pokemon.",
+        "NSPhotoLibraryUsageDescription": "Allow PokeExplorer to save photos.",
+        "NSPhotoLibraryAddUsageDescription": "Allow PokeExplorer to save Pokemon to your gallery.",
+        "NSLocationWhenInUseUsageDescription": "Allow PokeExplorer to find Pokemon near you."
+      }
     },
     "android": {
       "package": "com.kkyuuki.pokeexplorer",

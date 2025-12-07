@@ -67,9 +67,11 @@ const PokemonDetailScreen = ({ route }: any) => {
 
     const handleShare = async () => {
         if (!details) return;
+        const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${details.id}.png`;
         try {
             await Share.share({
                 message: `Check out ${details.name.toUpperCase()} (#${details.id}) in PokeExplorer! 🐾\nWeight: ${details.weight / 10}kg\nHeight: ${details.height / 10}m`,
+                url: imageUrl, // iOS handles URL better
                 title: `Share ${details.name}`
             });
         } catch (error: any) {
