@@ -1,0 +1,21 @@
+# Pokédex Lore Notes
+
+This file contains design concepts for Pokémon lore and descriptive entries for the AR Pokédex.
+
+## Pokédex Entries
+- Each creature has a unique lore entry, describing habitat, behavior, and history.
+- Special notes for shiny or rare variants, highlighting differences in appearance or abilities.
+- Entries can include folklore, myths, or local legends tied to the region.
+- Observational data can be recorded by players as they encounter creatures in AR.
+
+## Observations
+- Rich lore increases immersion and encourages exploration.
+- Players enjoy reading about the history and habits of creatures they capture.
+- Rare lore entries (mythical or event-exclusive) create collectible incentives.
+
+## Future Ideas
+- Include audio narration of lore for AR immersion.
+- Add “research notes” feature where players contribute findings to the Pokédex.
+- Unlock hidden lore entries via special conditions (weather, habitat, time-of-day).
+
+— System design log for the **TrainerLink AR Project**
