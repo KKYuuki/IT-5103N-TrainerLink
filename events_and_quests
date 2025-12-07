@@ -1,0 +1,26 @@
+# Event & Quest System Notes
+
+This file outlines design concepts for in-game events, daily missions, and AR-based quests.
+
+## Daily & Seasonal Events
+- Daily missions: catch specific types, interact with AR creatures, explore areas.
+- Seasonal events with limited creatures and unique rewards.
+- Global events where all players contribute to unlock rare creatures.
+- Event timers and progress trackers for engagement and competition.
+
+## AR Quests
+- AR puzzles and mini-games appearing at real-world locations.
+- Special quests unlock rare creatures or shiny variants.
+- Multiple difficulty tiers to accommodate beginners and experienced players.
+
+## Observations
+- Time-limited events encourage daily play.
+- AR quests increase real-world exploration and immersion.
+- Players respond positively to collaborative global events.
+
+## Future Ideas
+- Integrate weather- or region-based event modifiers.
+- Introduce story-based quests tied to creature lore.
+- Implement multiplayer quests with cooperative challenges.
+
+— System design log for the **TrainerLink AR Project**
