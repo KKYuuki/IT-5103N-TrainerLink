@@ -52,7 +52,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow PokeExplorer to use your location."
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

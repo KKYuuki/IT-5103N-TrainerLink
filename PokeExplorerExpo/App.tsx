@@ -63,11 +63,41 @@ const MainTabNavigator = () => {
   );
 };
 
+import { Audio } from 'expo-av';
+
+import { useFonts, Poppins_400Regular, Poppins_700Bold, Poppins_900Black } from '@expo-google-fonts/poppins';
+
 // 3. App Navigator (Auth Switch)
 const AppNavigator = () => {
   const { user, loading } = useUser();
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular,
+    Poppins_700Bold,
+    Poppins_900Black,
+  });
+  const [sound, setSound] = React.useState<Audio.Sound | null>(null);
 
-  if (loading) {
+  // Global Auth Music Manager
+  React.useEffect(() => {
+    // ... (music logic remains the same) ...
+    let currentSound: Audio.Sound | null = null;
+    const manageMusic = async () => {
+      if (sound) { await sound.stopAsync(); await sound.unloadAsync(); setSound(null); }
+      if (!user) {
+        try {
+          const { sound: newSound } = await Audio.Sound.createAsync(require('./assets/login-signup-bgmusic.mp3'));
+          currentSound = newSound;
+          setSound(newSound);
+          await newSound.setIsLoopingAsync(true);
+          await newSound.playAsync();
+        } catch (error) { console.log("Error playing auth music:", error); }
+      }
+    };
+    if (!loading) manageMusic();
+    return () => { if (currentSound) currentSound.unloadAsync(); };
+  }, [user, loading]);
+
+  if (loading || !fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#ff5722" />
@@ -92,7 +122,7 @@ const AppNavigator = () => {
           />
         </Stack.Navigator>
       ) : (
-        <Stack.Navigator>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
         </Stack.Navigator>

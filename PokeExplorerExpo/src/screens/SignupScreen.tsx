@@ -1,92 +1,185 @@
-import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, ActivityIndicator, Image } from 'react-native';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '../services/firebaseConfig';
 
 const SignupScreen = ({ navigation }: any) => {
-    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [username, setUsername] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSignup = async () => {
-        if (!email || !password || !name) {
-            Alert.alert('Error', 'Please fill in all fields');
+        if (!email || !password || !username) {
+            Alert.alert('Error', 'Please fill in all fields.');
             return;
         }
-
         setLoading(true);
+
         try {
-            // 1. Check if username is already taken
-            const q = query(collection(db, "users"), where("username", "==", name));
+            // Check if username unique
+            const q = query(collection(db, "users"), where("username", "==", username));
             const querySnapshot = await getDocs(q);
 
             if (!querySnapshot.empty) {
-                Alert.alert("Username Taken", "Please choose a different Trainer Name.");
+                Alert.alert("Error", "Username already taken.");
                 setLoading(false);
                 return;
             }
 
-            // 2. Create Auth Account
+            // Create Auth User
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
 
-            // 3. Update Auth Profile
-            await updateProfile(userCredential.user, {
-                displayName: name
-            });
+            // Update Profile
+            await updateProfile(user, { displayName: username });
 
-            // 4. Save to Firestore "Phonebook"
-            await setDoc(doc(db, "users", userCredential.user.uid), {
-                username: name,
-                email: email,
-                uid: userCredential.user.uid,
+            // Store in Firestore
+            await setDoc(doc(db, "users", user.uid), {
+                uid: user.uid,
+                email: user.email,
+                username: username,
                 createdAt: new Date()
             });
 
-            // Navigate back or let Auth listener handle it
+            // Auth listener in App.tsx will redirect to Map
         } catch (error: any) {
             Alert.alert('Signup Error', error.message);
-        } finally {
             setLoading(false);
         }
     };
 
-    if (loading) return <View style={styles.container}><ActivityIndicator size="large" color="#ff5722" /></View>;
+    if (loading) return (
+        <View style={[styles.container, styles.loadingContainer]}>
+            <ActivityIndicator size="large" color="#FF0000" />
+            <Text style={{ marginTop: 10, color: '#FF0000', fontWeight: 'bold' }}>Registering Trainer...</Text>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Join the Hunt!</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Trainer Name (Unique)"
-                value={name}
-                onChangeText={setName}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
-            <Button title="Sign Up" onPress={handleSignup} />
-            <Button title="Back to Login" onPress={() => navigation.navigate('Login')} />
+            {/* Top Branding */}
+            <View style={styles.header}>
+                <Image
+                    source={require('../../assets/pokeball-login-signup.png')}
+                    style={styles.logo}
+                />
+                <Text style={styles.title}>NEW TRAINER</Text>
+            </View>
+
+            <View style={styles.formContainer}>
+
+
+                <TextInput
+                    style={styles.input}
+                    placeholder="Trainer Name (Username)"
+                    placeholderTextColor="#999"
+                    value={username}
+                    onChangeText={setUsername}
+                    autoCapitalize="none"
+                />
+
+                <TextInput
+                    style={styles.input}
+                    placeholder="Email Address"
+                    placeholderTextColor="#999"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                />
+
+                <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    placeholderTextColor="#999"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                />
+
+                <TouchableOpacity style={styles.signupBtn} onPress={handleSignup}>
+                    <Text style={styles.btnText}>JOIN THE LEAGUE</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+                    <Text style={styles.backText}>Already have an ID? Login</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', padding: 20 },
-    title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-    input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10, borderRadius: 5 },
+    container: {
+        flex: 1,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center'
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 30,
+    },
+    logo: {
+        width: 160,
+        height: 160,
+        marginBottom: 10,
+        resizeMode: 'contain'
+    },
+    title: {
+        fontSize: 32, // Larger
+        fontWeight: '900', // Exact definition of "bold"
+        color: '#d50000',
+        letterSpacing: 2
+    },
+    formContainer: {
+        paddingHorizontal: 30,
+    },
+    // Subtitle removed from styles
+    input: {
+        borderWidth: 2,
+        borderColor: '#FF0000',
+        backgroundColor: '#FFF0F0',
+        padding: 15,
+        marginBottom: 15,
+        borderRadius: 25,
+        fontSize: 16,
+        color: '#333'
+    },
+    signupBtn: {
+        backgroundColor: '#CC0000',
+        padding: 15,
+        borderRadius: 25,
+        alignItems: 'center',
+        marginTop: 10,
+        elevation: 5,
+        shadowColor: 'red',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+    },
+    btnText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
+        letterSpacing: 1
+    },
+    backBtn: {
+        marginTop: 20,
+        alignItems: 'center',
+    },
+    backText: {
+        color: '#CC0000',
+        fontWeight: 'bold',
+        fontSize: 16
+    }
 });
 
 export default SignupScreen;
+

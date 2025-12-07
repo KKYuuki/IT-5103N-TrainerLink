@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, ActivityIndicator, Image } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../services/firebaseConfig';
@@ -40,38 +40,129 @@ const LoginScreen = ({ navigation }: any) => {
         }
     };
 
-    if (loading) return <View style={styles.container}><ActivityIndicator size="large" color="#ff5722" /></View>;
+    if (loading) return (
+        <View style={[styles.container, styles.loadingContainer]}>
+            <ActivityIndicator size="large" color="#FF0000" />
+            <Text style={{ marginTop: 10, color: '#FF0000', fontWeight: 'bold' }}>Authenticating...</Text>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>PokeExplorer Login</Text>
-            <Text style={{ fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 20 }}>
-                Enter Email or Trainer Name
-            </Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Email or Trainer Name"
-                value={input}
-                onChangeText={setInput}
-                autoCapitalize="none"
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
-            <Button title="Login" onPress={handleLogin} />
-            <Button title="Create Account" onPress={() => navigation.navigate('Signup')} />
+            {/* Top Branding */}
+            <View style={styles.header}>
+                {/* 
+                   REPLACE source below with: require('../../assets/pokeball-login-signup.png') 
+                   Using default icon as placeholder to prevent crash.
+                */}
+                <Image
+                    source={require('../../assets/pokeball-login-signup.png')}
+                    style={styles.logo}
+                />
+                <Text style={styles.title}>TRAINER LINK</Text>
+            </View>
+
+            <View style={styles.formContainer}>
+
+
+                <TextInput
+                    style={styles.input}
+                    placeholder="Email or Trainer Name"
+                    placeholderTextColor="#999"
+                    value={input}
+                    onChangeText={setInput}
+                    autoCapitalize="none"
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    placeholderTextColor="#999"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                />
+
+                <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+                    <Text style={styles.btnText}>LOGIN</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.signupBtn} onPress={() => navigation.navigate('Signup')}>
+                    <Text style={styles.signupText}>Create New Trainer ID</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', padding: 20 },
-    title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-    input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10, borderRadius: 5 },
+    container: {
+        flex: 1,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center'
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    // Subtitle removed (removed from JSX too)
+    title: {
+        fontSize: 36, // Much Larger
+        fontWeight: '900', // HEX Extra Bold
+        color: '#d50000',
+        letterSpacing: 2,
+        alignSelf: 'center',
+        textAlign: 'center'
+    },
+    formContainer: {
+        paddingHorizontal: 30,
+    },
+    input: {
+        borderWidth: 2,
+        borderColor: '#FF0000',
+        backgroundColor: '#FFF0F0',
+        padding: 15,
+        marginBottom: 15,
+        borderRadius: 25,
+        fontSize: 16,
+        color: '#333'
+    },
+    loginBtn: {
+        backgroundColor: '#CC0000',
+        padding: 15,
+        borderRadius: 25,
+        alignItems: 'center',
+        marginTop: 10,
+        elevation: 5,
+        shadowColor: 'red',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    logo: {
+        width: 200, // x2 (was 100)
+        height: 200,
+        marginBottom: 20,
+        resizeMode: 'contain'
+    },
+    btnText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
+        letterSpacing: 1
+    },
+    signupBtn: {
+        marginTop: 20,
+        alignItems: 'center',
+    },
+    signupText: {
+        color: '#CC0000',
+        fontWeight: 'bold',
+        fontSize: 16
+    }
 });
 
 export default LoginScreen;

@@ -44,6 +44,12 @@ export interface PokemonDetail {
             };
         };
     };
+    moves: {
+        move: {
+            name: string;
+            url: string;
+        };
+    }[];
 }
 
 export const getPokemonList = async (limit: number = 20, offset: number = 0): Promise<PokemonListResponse> => {
