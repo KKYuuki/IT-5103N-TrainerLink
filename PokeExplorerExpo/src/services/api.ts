@@ -71,3 +71,54 @@ export const getPokemonDetails = async (idOrName: string | number): Promise<Poke
         throw error;
     }
 };
+
+export interface FlavorTextEntry {
+    flavor_text: string;
+    language: {
+        name: string;
+    };
+}
+
+export interface PokemonSpecies {
+    id: number;
+    flavor_text_entries: FlavorTextEntry[];
+    evolution_chain: {
+        url: string;
+    };
+    is_legendary: boolean;
+    is_mythical: boolean;
+}
+
+export interface EvolutionNode {
+    species: {
+        name: string;
+        url: string;
+    };
+    evolves_to: EvolutionNode[];
+}
+
+export interface EvolutionChain {
+    chain: EvolutionNode;
+}
+
+export const getPokemonSpecies = async (id: number): Promise<PokemonSpecies> => {
+    try {
+        const response = await fetch(`${BASE_URL}/pokemon-species/${id}`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        return await response.json();
+    } catch (error) {
+        console.error(`Error fetching species for ${id}:`, error);
+        throw error;
+    }
+};
+
+export const getEvolutionChain = async (url: string): Promise<EvolutionChain> => {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok');
+        return await response.json();
+    } catch (error) {
+        console.error(`Error fetching evolution chain:`, error);
+        throw error;
+    }
+};

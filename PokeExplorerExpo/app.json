@@ -16,6 +16,12 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.kkyuuki.pokeexplorer",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyC9YFol8BI5BkCUUcers18gAhKbpbI5ONE"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

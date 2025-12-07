@@ -31,24 +31,6 @@ LogBox.ignoreLogs([
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// 1. Pokedex Stack (List -> Detail)
-const PokedexStack = () => {
-  return (
-    <Stack.Navigator>
-      <Stack.Screen
-        name="PokedexMain"
-        component={PokedexScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="PokemonDetail"
-        component={PokemonDetailScreen}
-        options={({ route }: any) => ({ title: route.params.pokemonName })}
-      />
-    </Stack.Navigator>
-  );
-};
-
 // 2. Main Tab Navigator (Map, Pokedex, Profile)
 const MainTabNavigator = () => {
   return (
@@ -63,7 +45,7 @@ const MainTabNavigator = () => {
       />
       <Tab.Screen
         name="PokedexTab"
-        component={PokedexStack}
+        component={PokedexScreen}
         options={{
           title: 'Pokedex',
           tabBarIcon: ({ color, size }) => <MaterialIcons name="grid-on" size={size} color={color} />
@@ -96,12 +78,17 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       {user ? (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+        <Stack.Navigator>
+          <Stack.Screen name="MainTabs" component={MainTabNavigator} options={{ headerShown: false }} />
           <Stack.Screen
             name="Catch"
             component={CatchScreen}
-            options={{ presentation: 'fullScreenModal' }}
+            options={{ presentation: 'fullScreenModal', headerShown: false }}
+          />
+          <Stack.Screen
+            name="PokemonDetail"
+            component={PokemonDetailScreen}
+            options={({ route }: any) => ({ title: route.params.pokemonName })}
           />
         </Stack.Navigator>
       ) : (

@@ -16,38 +16,9 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const COLUMNS = 4;
 const ITEM_SIZE = SCREEN_WIDTH / COLUMNS;
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }: any) => {
     const { user } = useUser();
     const { isCaught, caughtPokemon } = usePokemon();
-    const [savingId, setSavingId] = useState<number | null>(null);
-
-    const handleSaveToGallery = async (id: number, name: string) => {
-        try {
-            setSavingId(id);
-            // 1. Request Permission (Write Only to avoid Audio permission error on Android 13+)
-            const { status } = await MediaLibrary.requestPermissionsAsync(true);
-            if (status !== 'granted') {
-                Alert.alert("Permission Denied", "We need access to your gallery to save the Pokemon!");
-                return;
-            }
-
-            // 2. Download Image to Local File
-            const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
-            const fileUri = `${FileSystem.documentDirectory}${name}_${id}.png`;
-
-            const { uri } = await FileSystem.downloadAsync(imageUrl, fileUri);
-
-            // 3. Save to Media Library
-            const asset = await MediaLibrary.createAssetAsync(uri);
-            await MediaLibrary.createAlbumAsync("PokeExplorer", asset, false);
-
-            Alert.alert("Saved! 📸", `${name} has been saved to your gallery.`);
-        } catch (error: any) {
-            Alert.alert("Error", "Failed to save image: " + error.message);
-        } finally {
-            setSavingId(null);
-        }
-    };
 
     const renderPokemonItem = ({ item: id }: { item: number }) => {
         const caught = isCaught(id);
@@ -58,17 +29,13 @@ const ProfileScreen = () => {
             <View style={styles.gridItem}>
                 <TouchableOpacity
                     style={[styles.imageContainer, !caught && styles.uncaughtContainer]}
-                    onPress={() => caught && handleSaveToGallery(id, name)}
-                    disabled={!caught || savingId === id}
+                    onPress={() => caught && navigation.navigate('PokemonDetail', { pokemonId: id, pokemonName: name })}
+                    disabled={!caught}
                 >
-                    {savingId === id ? (
-                        <ActivityIndicator size="small" color="#ff5722" />
-                    ) : (
-                        <Image
-                            source={{ uri: imageUrl }}
-                            style={[styles.pokemonImage, !caught && styles.silhouette]}
-                        />
-                    )}
+                    <Image
+                        source={{ uri: imageUrl }}
+                        style={[styles.pokemonImage, !caught && styles.silhouette]}
+                    />
                 </TouchableOpacity>
                 <Text style={styles.pokemonId}>#{id.toString().padStart(3, '0')}</Text>
                 <Text style={styles.pokemonName}>{caught ? name : "????"}</Text>
