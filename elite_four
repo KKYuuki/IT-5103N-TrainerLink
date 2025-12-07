@@ -1,0 +1,21 @@
+# Elite Four System Notes
+
+This file contains design concepts for AR Elite Four challenges and endgame content.
+
+## Elite Four Features
+- High-difficulty AR locations representing Elite Four members.
+- Each member specializes in a unique type or theme (e.g., Ice, Psychic, Legendary).
+- Players must complete multiple sequential challenges to reach the Champion.
+- Rare or shiny creature encounters are more likely during Elite Four attempts.
+
+## Observations
+- Provides long-term goals and high-stakes AR exploration.
+- Encourages players to master creature collection and AR interaction mechanics.
+- Completing the Elite Four unlocks unique badges, items, and lore entries.
+
+## Future Ideas
+- Randomized Elite Four member rotations for replayability.
+- Introduce “Champion Trials” with community leaderboards.
+- Event-exclusive creatures only obtainable through Elite Four challenges.
+
+— System design log for the **TrainerLink AR Project**
