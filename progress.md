@@ -37,7 +37,9 @@
 - [x] Create ProfileScreen (Grid & Stats)
 - [x] Implement Catching Logic & Persistence
 - [x] Implement Username/Email Login (Firestore)
-- [ ] Create CommunityScreen (Firebase Realtime DB)
+- [x] Create CommunityScreen (Firebase Firestore Feed)
+- [x] Cloud Pokedex Sync (Minimal Storage)
+- [x] Social Sharing (Native Share)
 - [ ] Implement User Profile & Badges
 
 ## Phase 6: Final Build & Testing (Week 6)

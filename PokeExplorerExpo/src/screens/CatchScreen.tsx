@@ -4,6 +4,9 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Gyroscope } from 'expo-sensors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { usePokemon } from '../context/PokemonContext';
+import { useUser } from '../context/UserContext';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '../services/firebaseConfig';
 
 const { width, height } = Dimensions.get('window');
 
@@ -12,6 +15,7 @@ const CatchScreen = ({ route, navigation }: any) => {
     const [permission, requestPermission] = useCameraPermissions();
     const [caught, setCaught] = useState(false);
     const { markCaught } = usePokemon();
+    const { user, userData } = useUser();
 
     // Animation Values
     const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -106,9 +110,24 @@ const CatchScreen = ({ route, navigation }: any) => {
         );
     }
 
-    const handleCatch = () => {
+    const handleCatch = async () => {
         setCaught(true);
         markCaught(pokemonId); // Save to persistence
+
+        // Post to Community Feed (Fire and forget)
+        if (user) {
+            try {
+                await addDoc(collection(db, "posts"), {
+                    username: userData?.username || user.displayName || 'Trainer',
+                    pokemonId,
+                    pokemonName,
+                    timestamp: serverTimestamp()
+                });
+            } catch (error) {
+                console.log("Failed to post to community feed", error);
+            }
+        }
+
         Alert.alert(
             "Gotcha! ⭐",
             `You caught ${pokemonName || 'Pokemon'}!`,
