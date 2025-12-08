@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { StyleSheet, View, Text, ActivityIndicator, Alert, TouchableOpacity, Image, Platform } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useUser } from '../context/UserContext';
+import { useFocusEffect } from '@react-navigation/native';
+import { Audio } from 'expo-av';
 import * as Notifications from 'expo-notifications';
 import { MaterialIcons } from '@expo/vector-icons';
 import { checkGridForSpawns, SpawnLocation } from '../utils/spawning';
@@ -47,6 +49,8 @@ const MapScreen = ({ navigation }: any) => {
     const lastSpawnLocation = useRef<{ lat: number, lng: number } | null>(null);
     // Track notification time to avoid spam
     const lastNotificationTime = useRef<number>(0);
+    // Audio ref
+    const soundRef = useRef<Audio.Sound | null>(null);
 
     // DEBUG: Track start location
     const startLocation = useRef<{ lat: number, lng: number } | null>(null);
@@ -101,6 +105,37 @@ const MapScreen = ({ navigation }: any) => {
             }
         };
     }, []);
+
+    // Background Audio Handling
+    useFocusEffect(
+        useCallback(() => {
+            const playSound = async () => {
+                try {
+                    console.log('Loading Sound');
+                    const { sound } = await Audio.Sound.createAsync(
+                        require('../../assets/maps-bgmusic.mp3'),
+                        { isLooping: true, shouldPlay: true, volume: 0.5 }
+                    );
+                    soundRef.current = sound;
+                    console.log('Playing Sound');
+                    await sound.playAsync();
+                } catch (error) {
+                    console.log('Error playing sound:', error);
+                }
+            };
+
+            playSound();
+
+            return () => {
+                console.log('Unloading Sound');
+                if (soundRef.current) {
+                    soundRef.current.stopAsync();
+                    soundRef.current.unloadAsync();
+                    soundRef.current = null;
+                }
+            };
+        }, [])
+    );
 
     // MAIN GAME LOOP: React to location or offset changes
     useEffect(() => {
@@ -197,7 +232,7 @@ const MapScreen = ({ navigation }: any) => {
         const biome = getBiomeAtLocation(effectiveLat, effectiveLng);
         setCurrentBiome(biome);
 
-        const MOVEMENT_THRESHOLD = 2; // Very small threshold for responsiveness
+        const MOVEMENT_THRESHOLD = 5; // Higher threshold to reduce jitter
 
         // Always update if no last location
         const dist = lastSpawnLocation.current
