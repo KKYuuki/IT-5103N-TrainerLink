@@ -76,8 +76,36 @@ const MapScreen = ({ navigation }: any) => {
                 });
             }
 
-            // Initial position
-            let loc = await Location.getCurrentPositionAsync({});
+            // Initial position (Emulator Safe Strategy)
+            let loc = await Location.getLastKnownPositionAsync({});
+            if (!loc) {
+                // If no cached location, try to get current with a timeout
+                try {
+                    loc = await Promise.race([
+                        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                    ]) as Location.LocationObject;
+                } catch (e) {
+                    console.log("GPS Timeout or Error, defaulting to standard location");
+                }
+            }
+
+            // Fallback for emulator if everything fails (e.g. San Francisco)
+            if (!loc) {
+                loc = {
+                    coords: {
+                        latitude: 37.7749,
+                        longitude: -122.4194,
+                        altitude: 0,
+                        accuracy: 0,
+                        altitudeAccuracy: 0,
+                        heading: 0,
+                        speed: 0
+                    },
+                    timestamp: Date.now()
+                };
+            }
+
             setRealLocation(loc);
 
             if (!startLocation.current) {
