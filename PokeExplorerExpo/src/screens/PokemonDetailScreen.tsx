@@ -67,13 +67,27 @@ const PokemonDetailScreen = ({ route }: any) => {
 
     const handleShare = async () => {
         if (!details) return;
+
         try {
+            // 1. Define temp path
+            const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${details.id}.png`;
+            const fileUri = `${FileSystem.cacheDirectory}share_${details.id}.png`;
+
+            // 2. Download to local cache
+            const { uri } = await FileSystem.downloadAsync(imageUrl, fileUri);
+
+            // 3. Share the local file
             await Share.share({
-                message: `Check out ${details.name.toUpperCase()} (#${details.id}) in PokeExplorer! 🐾\nWeight: ${details.weight / 10}kg\nHeight: ${details.height / 10}m`,
+                message: `Check out ${details.name.toUpperCase()} (#${details.id})! 🐾`,
+                url: uri,
                 title: `Share ${details.name}`
             });
         } catch (error: any) {
-            Alert.alert("Share failed", error.message);
+            // Fallback to simple text if download fails
+            await Share.share({
+                message: `Check out ${details.name.toUpperCase()} (#${details.id}) in PokeExplorer!`,
+                title: `Share ${details.name}`
+            });
         }
     };
 

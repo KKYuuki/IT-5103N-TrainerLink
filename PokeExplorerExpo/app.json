@@ -13,13 +13,19 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow PokeExplorer to access your camera to catch Pokemon.",
+        "NSPhotoLibraryUsageDescription": "Allow PokeExplorer to save photos.",
+        "NSPhotoLibraryAddUsageDescription": "Allow PokeExplorer to save Pokemon to your gallery.",
+        "NSLocationWhenInUseUsageDescription": "Allow PokeExplorer to find Pokemon near you."
+      }
     },
     "android": {
       "package": "com.kkyuuki.pokeexplorer",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyC9YFol8BI5BkCUUcers18gAhKbpbI5ONE"
+          "apiKey": "AIzaSyC-Gonedyu2XL_U9b7NMS2cwEEXH2gf1Io"
         }
       },
       "adaptiveIcon": {

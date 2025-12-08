@@ -11,24 +11,7 @@ export interface SpawnLocation {
 
 /**
  * Checks a grid of cells around a center point and returns deterministic spawns.
- * @param centerLat Your latitude
-import { getBiomeAtLocation, getGridHash, getPokemonForBiome } from './procedural';
-
-export interface SpawnLocation {
-    id: string;
-    latitude: number;
-    longitude: number;
-    pokemonId: number;
-    despawnTime: number; // For timer logic
-    biome: string;       // For debug info
-}
-
-/**
- * Checks a grid of cells around a center point and returns deterministic spawns.
- * @param centerLat Your latitude
- * @param centerLng Your longitude
- * @param calcRadius How far to calculate spawns (converted to grid cells)
- * @param visibleRadius How far to return visible spawns
+ * Now uses SECTOR-BASED spawning to enforce uniqueness and density.
  */
 export const checkGridForSpawns = (
     centerLat: number,
@@ -36,71 +19,116 @@ export const checkGridForSpawns = (
     calcRadius: number = 150,    // "Math" Radius
     visibleRadius: number = 100  // "Sprite" Radius
 ): SpawnLocation[] => {
-    const spawns: SpawnLocation[] = [];
-    const speciesPresent = new Set<number>();
 
     // Grid size ~ 0.0001 deg (~11 meters)
     const GRID_SIZE = 0.0001;
-
-    // Calculate range based on larger MATH radius
-    const cellRange = Math.ceil((calcRadius / 111111) / GRID_SIZE) + 2;
+    const SECTOR_SIZE = 20; // 20x20 cells per sector (~220m x 220m)
 
     // Current hour index (changes every hour)
     const currentHour = Math.floor(Date.now() / (1000 * 60 * 60));
 
-    // Iterate over the BUFFERED grid to collect candidates
-    const candidates: { x: number, y: number, lat: number, lng: number, dist: number }[] = [];
+    // Calculate Center Sector
+    const centerLatIdx = Math.round(centerLat / GRID_SIZE);
+    const centerLngIdx = Math.round(centerLng / GRID_SIZE);
 
-    for (let x = -cellRange; x <= cellRange; x++) {
-        for (let y = -cellRange; y <= cellRange; y++) {
-            const cellLat = Math.floor(centerLat / GRID_SIZE) * GRID_SIZE + (x * GRID_SIZE);
-            const cellLng = Math.floor(centerLng / GRID_SIZE) * GRID_SIZE + (y * GRID_SIZE);
+    const centerSectorX = Math.floor(centerLatIdx / SECTOR_SIZE);
+    const centerSectorY = Math.floor(centerLngIdx / SECTOR_SIZE);
 
-            const dLatK = (cellLat - centerLat) * 111111;
-            const dLngK = (cellLng - centerLng) * 111111 * Math.cos(centerLat * Math.PI / 180);
-            const distMeters = Math.sqrt(dLatK * dLatK + dLngK * dLngK);
+    // How many sectors to check? (Radius / SectorSize)
+    // 150m / 88m ~ 2 sectors. So check +/- 2 sectors is plenty safe.
+    const sectorRange = 2;
 
-            if (distMeters <= calcRadius) {
-                candidates.push({ x, y, lat: cellLat, lng: cellLng, dist: distMeters });
-            }
+    const allSpawns: SpawnLocation[] = [];
+
+    for (let sx = -sectorRange; sx <= sectorRange; sx++) {
+        for (let sy = -sectorRange; sy <= sectorRange; sy++) {
+            const sectorX = centerSectorX + sx;
+            const sectorY = centerSectorY + sy;
+
+            const sectorSpawns = getSpawnsForSector(sectorX, sectorY, currentHour, GRID_SIZE, SECTOR_SIZE);
+            allSpawns.push(...sectorSpawns);
         }
     }
 
-    // SORT DETERMINISTICALLY (by World Latitude, then Longitude)
-    // This ensures processing order is independent of player position
-    candidates.sort((a, b) => (a.lat - b.lat) || (a.lng - b.lng));
+    // Filter by actual distance from player
+    return allSpawns.filter(spawn => {
+        const dLatK = (spawn.latitude - centerLat) * 111111;
+        const dLngK = (spawn.longitude - centerLng) * 111111 * Math.cos(centerLat * Math.PI / 180);
+        const dist = Math.sqrt(dLatK * dLatK + dLngK * dLngK);
+        return dist <= visibleRadius;
+    });
+};
 
-    // Process sorted candidates
-    for (const cell of candidates) {
-        const { lat: cellLat, lng: cellLng, dist: distMeters } = cell;
+const getSpawnsForSector = (
+    sectorX: number,
+    sectorY: number,
+    hour: number,
+    GRID_SIZE: number,
+    SECTOR_SIZE: number
+): SpawnLocation[] => {
+    const spawns: SpawnLocation[] = [];
 
-        // 1. Is there a spawn here?
-        const spawnChance = getGridHash(cellLat, cellLng, currentHour);
+    // Deterministic Seed for this Sector
+    const sectorSeed = getGridHash(sectorX, sectorY, hour);
 
-        if (spawnChance > 0.985) {
-            let speciesHash = getGridHash(cellLat, cellLng, currentHour + 999);
-            let biome = getBiomeAtLocation(cellLat, cellLng);
-            let pokemonId = getPokemonForBiome(biome, speciesHash);
+    // 1. Determine how many spawns in this sector (e.g., 8 to 12)
+    // Larger sector = more pokemon needed to fill space
+    // 8 + (0..4) = 8, 9, 10, 11, 12
+    const spawnCount = 8 + Math.floor(getGridHash(sectorX, sectorY, hour + 123) * 5);
 
-            // STRICT UNIQUENESS CHECK
-            let attempts = 0;
-            while (speciesPresent.has(pokemonId) && attempts < 10) {
-                attempts++;
-                speciesHash = getGridHash(cellLat, cellLng, currentHour + (attempts * 1000));
-                pokemonId = getPokemonForBiome(biome, speciesHash);
-            }
+    // 2. Determine Biome for this sector (sample center)
+    const sectorCenterLat = (sectorX * SECTOR_SIZE + (SECTOR_SIZE / 2)) * GRID_SIZE;
+    const sectorCenterLng = (sectorY * SECTOR_SIZE + (SECTOR_SIZE / 2)) * GRID_SIZE;
+    const biome = getBiomeAtLocation(sectorCenterLat, sectorCenterLng);
 
-            if (speciesPresent.has(pokemonId)) continue;
-            speciesPresent.add(pokemonId);
+    // 3. Select UNIQUE species
+    const speciesSet = new Set<number>();
+    const speciesList: number[] = [];
+    let attempt = 0;
 
-            // ONLY return if within VISIBLE radius
-            if (distMeters <= visibleRadius) {
+    while (speciesList.length < spawnCount && attempt < 20) {
+        attempt++;
+        // mix seed: sector + attempt
+        const hash = getGridHash(sectorX, sectorY, hour + (attempt * 777));
+        const pid = getPokemonForBiome(biome, hash);
+
+        if (!speciesSet.has(pid)) {
+            speciesSet.add(pid);
+            speciesList.push(pid);
+        }
+    }
+
+    // 4. Select UNIQUE positions (sub-cells)
+    const posSet = new Set<string>();
+
+    for (const pid of speciesList) {
+        let posAttempt = 0;
+        let placed = false;
+
+        while (!placed && posAttempt < 15) {
+            posAttempt++;
+            // Unique hash for position based on PID to distribute effectively
+            const ph = getGridHash(sectorX, sectorY, hour + pid + (posAttempt * 111));
+
+            // 0..63
+            const cellIndex = Math.floor(ph * (SECTOR_SIZE * SECTOR_SIZE));
+            const subX = Math.floor(cellIndex / SECTOR_SIZE); // 0..7
+            const subY = cellIndex % SECTOR_SIZE;             // 0..7
+
+            if (!posSet.has(`${subX},${subY}`)) {
+                posSet.add(`${subX},${subY}`);
+                placed = true;
+
+                // Calculate absolute coordinates
+                const latIdx = sectorX * SECTOR_SIZE + subX;
+                const lngIdx = sectorY * SECTOR_SIZE + subY;
+
                 spawns.push({
-                    id: `spawn_${cellLat.toFixed(5)}_${cellLng.toFixed(5)}_${currentHour}`,
-                    latitude: cellLat + (GRID_SIZE / 2),
-                    longitude: cellLng + (GRID_SIZE / 2),
-                    pokemonId: pokemonId,
-                    despawnTime: (currentHour + 1) * 60 * 60 * 1000,
+                    id: `spawn_sec_${sectorX}_${sectorY}_${latIdx}_${lngIdx}_${hour}`,
+                    latitude: (latIdx * GRID_SIZE) + (GRID_SIZE / 2),
+                    longitude: (lngIdx * GRID_SIZE) + (GRID_SIZE / 2),
+                    pokemonId: pid,
+                    despawnTime: (hour + 1) * 60 * 60 * 1000,
                     biome: biome
                 });
             }
