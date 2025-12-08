@@ -44,37 +44,57 @@ const CommunityScreen = () => {
     }, []);
 
     const renderItem = ({ item }: { item: Post }) => {
-        // Format Timestamp (handles Firestore Timestamp or Date)
+        // Format Timestamp with relative time
         let timeString = '';
         if (item.timestamp?.seconds) {
-            timeString = new Date(item.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const postDate = new Date(item.timestamp.seconds * 1000);
+            const now = new Date();
+            const diffMs = now.getTime() - postDate.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) timeString = 'Just now';
+            else if (diffMins < 60) timeString = `${diffMins}m ago`;
+            else if (diffHours < 24) timeString = `${diffHours}h ago`;
+            else timeString = `${diffDays}d ago`;
         } else {
             timeString = 'Just now';
         }
 
-
-        const avatarSource = require('../../assets/icon.png');
-
-        const pokemonUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.pokemonId}.png`;
+        const pokemonUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${item.pokemonId}.png`;
 
         return (
             <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                    <View style={styles.userInfo}>
-                        {/* Tiny Avatar Crop */}
-                        <View style={styles.avatarContainer}>
-                            <Image source={avatarSource} style={styles.avatarImage} />
-                        </View>
-                        <Text style={styles.username}>{item.username}</Text>
-                    </View>
-                    <Text style={styles.time}>{timeString}</Text>
+                {/* Large Pokemon Image Background */}
+                <View style={styles.pokemonImageContainer}>
+                    <Image source={{ uri: pokemonUrl }} style={styles.pokemonImage} />
+                    <View style={styles.pokemonOverlay} />
                 </View>
 
-                <View style={styles.cardBody}>
-                    <Text style={styles.actionText}>
-                        caught a <Text style={styles.pokemonName}>{item.pokemonName}</Text>!
-                    </Text>
-                    <Image source={{ uri: pokemonUrl }} style={styles.pokemonImage} />
+                {/* Content Overlay */}
+                <View style={styles.cardContent}>
+                    <View style={styles.cardHeader}>
+                        <View style={styles.trainerBadge}>
+                            <MaterialIcons name="person" size={20} color="#d50000" />
+                            <Text style={styles.username}>{item.username}</Text>
+                        </View>
+                        <View style={styles.timeContainer}>
+                            <MaterialIcons name="access-time" size={12} color="#999" />
+                            <Text style={styles.time}>{timeString}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.cardBody}>
+                        <View style={styles.pokeballIcon}>
+                            <MaterialIcons name="catching-pokemon" size={24} color="#d50000" />
+                        </View>
+                        <View style={styles.catchInfo}>
+                            <Text style={styles.catchLabel}>CAUGHT</Text>
+                            <Text style={styles.pokemonName}>{item.pokemonName}</Text>
+                            <Text style={styles.pokemonNumber}>#{String(item.pokemonId).padStart(3, '0')}</Text>
+                        </View>
+                    </View>
                 </View>
             </View>
         );
@@ -86,8 +106,15 @@ const CommunityScreen = () => {
 
     return (
         <View style={styles.container}>
+            {/* Modern Header with Gradient-like Effect */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Global Feed 🌐</Text>
+                <View style={styles.headerContent}>
+                    <MaterialIcons name="public" size={28} color="white" />
+                    <View style={styles.headerTextContainer}>
+                        <Text style={styles.headerTitle}>Community Feed</Text>
+                        <Text style={styles.headerSubtitle}>Recent catches from trainers worldwide</Text>
+                    </View>
+                </View>
             </View>
 
             <FlatList
@@ -95,81 +122,186 @@ const CommunityScreen = () => {
                 keyExtractor={(item) => item.id}
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
-                ListEmptyComponent={<Text style={styles.emptyText}>No recent catches. Go catch something!</Text>}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <MaterialIcons name="explore" size={80} color="#ccc" />
+                        <Text style={styles.emptyText}>No recent catches yet</Text>
+                        <Text style={styles.emptySubtext}>Be the first to catch a Pokemon!</Text>
+                    </View>
+                }
             />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    container: { 
+        flex: 1, 
+        backgroundColor: '#f8f9fa' 
+    },
+    center: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa'
+    },
     header: {
-        padding: 15,
+        paddingTop: 50,
+        paddingBottom: 20,
+        paddingHorizontal: 20,
         backgroundColor: '#d50000',
-        paddingTop: 50, // Status Bar
-        elevation: 4
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+    },
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerTextContainer: {
+        marginLeft: 12,
+        flex: 1,
     },
     headerTitle: {
         color: 'white',
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: 'bold',
-        textAlign: 'center'
+    },
+    headerSubtitle: {
+        color: 'rgba(255, 255, 255, 0.9)',
+        fontSize: 13,
+        marginTop: 2,
     },
     listContent: {
-        padding: 10,
-        paddingBottom: 80 // Bottom Tab clearance
+        padding: 15,
+        paddingBottom: 100,
     },
     card: {
         backgroundColor: 'white',
-        borderRadius: 15,
-        padding: 15,
-        marginBottom: 10,
-        elevation: 2,
+        borderRadius: 20,
+        marginBottom: 16,
+        elevation: 4,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        overflow: 'hidden',
+    },
+    pokemonImageContainer: {
+        height: 180,
+        backgroundColor: '#fafafa',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    pokemonImage: { 
+        width: 160, 
+        height: 160, 
+        resizeMode: 'contain',
+    },
+    pokemonOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(213, 0, 0, 0.03)',
+    },
+    cardContent: {
+        padding: 16,
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        paddingBottom: 5
+        marginBottom: 12,
     },
-    userInfo: { flexDirection: 'row', alignItems: 'center' },
-    avatarContainer: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        overflow: 'hidden',
-        marginRight: 8,
-        backgroundColor: '#eee',
-        justifyContent: 'center',
-        alignItems: 'center'
+    trainerBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff5f5',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#ffcdd2',
     },
-    avatarImage: {
-        width: 32 * 4, // Scale up to show crop
-        height: 32 * 4,
-        // Rough centering attempt since we can't perfectly crop dynamic sprite sheets easily here without complex styles
-        // But 32x32 window of top-left is usually Face/Down
-        marginLeft: 0,
-        marginTop: 0
+    username: { 
+        fontWeight: 'bold', 
+        fontSize: 15, 
+        color: '#d50000',
+        marginLeft: 6,
     },
-    username: { fontWeight: 'bold', fontSize: 16, color: '#333' },
-    time: { color: '#999', fontSize: 12 },
+    timeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    time: { 
+        color: '#999', 
+        fontSize: 12,
+        marginLeft: 4,
+    },
     cardBody: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+        padding: 12,
+        borderRadius: 12,
     },
-    actionText: { fontSize: 16, color: '#555', flex: 1 },
-    pokemonName: { fontWeight: 'bold', color: '#d50000', textTransform: 'capitalize' },
-    pokemonImage: { width: 60, height: 60, resizeMode: 'contain' },
-    emptyText: { textAlign: 'center', marginTop: 50, color: '#999', fontSize: 16 }
+    pokeballIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#fff5f5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    catchInfo: {
+        flex: 1,
+    },
+    catchLabel: {
+        fontSize: 10,
+        color: '#999',
+        fontWeight: '600',
+        letterSpacing: 1,
+        marginBottom: 2,
+    },
+    pokemonName: { 
+        fontWeight: 'bold', 
+        fontSize: 18, 
+        color: '#333',
+        textTransform: 'capitalize',
+        marginBottom: 2,
+    },
+    pokemonNumber: {
+        fontSize: 13,
+        color: '#d50000',
+        fontWeight: '600',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 100,
+        paddingHorizontal: 40,
+    },
+    emptyText: { 
+        textAlign: 'center', 
+        marginTop: 20, 
+        color: '#666', 
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    emptySubtext: {
+        textAlign: 'center',
+        marginTop: 8,
+        color: '#999',
+        fontSize: 14,
+    },
 });
 
 export default CommunityScreen;

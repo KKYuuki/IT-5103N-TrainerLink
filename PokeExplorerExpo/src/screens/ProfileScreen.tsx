@@ -32,13 +32,23 @@ const ProfileScreen = ({ navigation }: any) => {
                     onPress={() => caught && navigation.navigate('PokemonDetail', { pokemonId: id, pokemonName: name })}
                     disabled={!caught}
                 >
-                    <Image
-                        source={{ uri: imageUrl }}
-                        style={[styles.pokemonImage, !caught && styles.silhouette]}
-                    />
+                    {caught ? (
+                        <Image
+                            source={{ uri: imageUrl }}
+                            style={styles.pokemonImage}
+                        />
+                    ) : (
+                        <>
+                            <Image
+                                source={{ uri: imageUrl }}
+                                style={[styles.pokemonImage, styles.silhouette]}
+                            />
+                            <MaterialIcons name="lock" size={20} color="rgba(0,0,0,0.3)" style={styles.lockIcon} />
+                        </>
+                    )}
                 </TouchableOpacity>
                 <Text style={styles.pokemonId}>#{id.toString().padStart(3, '0')}</Text>
-                <Text style={styles.pokemonName}>{caught ? name : "????"}</Text>
+                <Text style={[styles.pokemonName, !caught && styles.unknownName]}>{caught ? name : "????"}</Text>
             </View>
         );
     };
@@ -48,20 +58,36 @@ const ProfileScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header / Trainer Card */}
+            {/* Enhanced Trainer Card Header */}
             <View style={styles.header}>
-                <View style={styles.avatar}>
-                    <MaterialIcons name="person" size={60} color="white" />
+                <View style={styles.headerBackground}>
+                    <MaterialIcons name="catching-pokemon" size={100} color="rgba(255,255,255,0.15)" style={styles.headerIcon} />
                 </View>
-                <View style={styles.userInfo}>
-                    <Text style={styles.userName}>{user?.displayName || "Trainer"}</Text>
-                    <Text style={styles.userEmail}>{user?.email}</Text>
-                    <View style={styles.badge}>
-                        <Text style={styles.badgeText}>
-                            Pokedex: {caughtPokemon.length} / 151
-                        </Text>
+                <View style={styles.headerContent}>
+                    <View style={styles.avatar}>
+                        <MaterialIcons name="person" size={50} color="white" />
+                    </View>
+                    <View style={styles.userInfo}>
+                        <Text style={styles.userName}>{user?.displayName || "Trainer"}</Text>
+                        <Text style={styles.userEmail}>{user?.email}</Text>
+                        <View style={styles.statsRow}>
+                            <View style={styles.statBadge}>
+                                <MaterialIcons name="catching-pokemon" size={16} color="#ff5722" />
+                                <Text style={styles.statText}>{caughtPokemon.length}/151</Text>
+                            </View>
+                            <View style={[styles.statBadge, { marginLeft: 8 }]}>
+                                <MaterialIcons name="star" size={16} color="#ff6f00" />
+                                <Text style={styles.statText}>{Math.round((caughtPokemon.length / 151) * 100)}%</Text>
+                            </View>
+                        </View>
                     </View>
                 </View>
+            </View>
+
+            {/* Collection Title */}
+            <View style={styles.collectionHeader}>
+                <Text style={styles.collectionTitle}>My Collection</Text>
+                <Text style={styles.collectionSubtitle}>Tap to view details</Text>
             </View>
 
             {/* Collection Grid */}
@@ -71,63 +97,150 @@ const ProfileScreen = ({ navigation }: any) => {
                 keyExtractor={(item) => item.toString()}
                 numColumns={COLUMNS}
                 contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
             />
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    container: { 
+        flex: 1, 
+        backgroundColor: '#f8f9fa' 
+    },
     header: {
+        backgroundColor: '#d50000',
+        paddingBottom: 24,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    headerBackground: {
+        position: 'absolute',
+        top: -20,
+        right: -20,
+    },
+    headerIcon: {
+        transform: [{ rotate: '15deg' }],
+    },
+    headerContent: {
         flexDirection: 'row',
         padding: 20,
-        backgroundColor: '#ff5722',
         alignItems: 'center',
-        elevation: 4
     },
     avatar: {
-        width: 80, height: 80, borderRadius: 40,
-        backgroundColor: 'rgba(255,255,255,0.3)',
-        justifyContent: 'center', alignItems: 'center',
-        marginRight: 20,
-        borderWidth: 2, borderColor: 'white'
+        width: 70, 
+        height: 70, 
+        borderRadius: 35,
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        justifyContent: 'center', 
+        alignItems: 'center',
+        marginRight: 16,
+        borderWidth: 3, 
+        borderColor: 'white',
+        elevation: 4,
     },
-    userInfo: { flex: 1 },
-    userName: { color: 'white', fontSize: 24, fontWeight: 'bold' },
-    userEmail: { color: 'rgba(255,255,255,0.8)', fontSize: 14, marginBottom: 5 },
-    badge: {
+    userInfo: { 
+        flex: 1 
+    },
+    userName: { 
+        color: 'white', 
+        fontSize: 24, 
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    userEmail: { 
+        color: 'rgba(255,255,255,0.9)', 
+        fontSize: 13, 
+        marginBottom: 10,
+    },
+    statsRow: {
+        flexDirection: 'row',
+    },
+    statBadge: {
+        flexDirection: 'row',
         backgroundColor: 'white',
-        paddingHorizontal: 10, paddingVertical: 4,
-        borderRadius: 12, alignSelf: 'flex-start'
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 12,
+        alignItems: 'center',
     },
-    badgeText: { color: '#ff5722', fontWeight: 'bold', fontSize: 12 },
-
-    // Grid Styles
-    listContent: { padding: 10 },
+    statText: {
+        color: '#d50000',
+        fontWeight: 'bold',
+        fontSize: 13,
+        marginLeft: 4,
+    },
+    collectionHeader: {
+        padding: 20,
+        paddingBottom: 12,
+    },
+    collectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    collectionSubtitle: {
+        fontSize: 13,
+        color: '#999',
+        marginTop: 2,
+    },
+    listContent: { 
+        padding: 12,
+        paddingBottom: 100,
+    },
     gridItem: {
         width: ITEM_SIZE - 5,
-        marginBottom: 15,
-        alignItems: 'center'
+        marginBottom: 16,
+        alignItems: 'center',
     },
     imageContainer: {
         width: ITEM_SIZE - 20,
         height: ITEM_SIZE - 20,
-        justifyContent: 'center', alignItems: 'center',
-        marginBottom: 5
+        justifyContent: 'center', 
+        alignItems: 'center',
+        marginBottom: 6,
+        backgroundColor: 'white',
+        borderRadius: 12,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
     },
     uncaughtContainer: {
-        // Optional: add background for empty slots
+        backgroundColor: '#f5f5f5',
     },
     pokemonImage: {
-        width: '100%', height: '100%',
-        resizeMode: 'contain'
+        width: '90%', 
+        height: '90%',
+        resizeMode: 'contain',
     },
     silhouette: {
         tintColor: 'black',
-        opacity: 0.3
+        opacity: 0.2,
     },
-    pokemonId: { fontSize: 10, color: '#888' },
-    pokemonName: { fontSize: 12, fontWeight: 'bold', color: '#333' }
+    lockIcon: {
+        position: 'absolute',
+    },
+    pokemonId: { 
+        fontSize: 11, 
+        color: '#999',
+        fontWeight: '600',
+    },
+    pokemonName: { 
+        fontSize: 11, 
+        fontWeight: 'bold', 
+        color: '#333',
+        textAlign: 'center',
+    },
+    unknownName: {
+        color: '#999',
+    },
 });
 
 export default ProfileScreen;
