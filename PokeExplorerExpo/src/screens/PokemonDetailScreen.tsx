@@ -17,7 +17,7 @@ import { usePokemon } from '../context/PokemonContext';
 import { useNavigation } from '@react-navigation/native';
 import * as MediaLibrary from 'expo-media-library';
 // @ts-ignore
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const TYPE_COLORS: { [key: string]: string } = {

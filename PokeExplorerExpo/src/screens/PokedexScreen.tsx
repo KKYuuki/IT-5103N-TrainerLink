@@ -112,7 +112,7 @@ const PokedexScreen = ({ navigation }: any) => {
             {/* Modern Header */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <MaterialIcons name="catching-pokemon" size={28} color="white" />
+                    <MaterialIcons name="catching-pokemon" size={28} color="white" style={{ transform: [{ rotate: '180deg' }] }} />
                     <View style={styles.headerTextContainer}>
                         <Text style={styles.headerTitle}>Pokedex</Text>
                         <Text style={styles.headerSubtitle}>Discover all Pokemon</Text>

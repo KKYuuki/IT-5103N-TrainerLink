@@ -14,10 +14,10 @@ const HomeScreen = ({ navigation }: any) => {
     const { caughtPokemon } = usePokemon();
 
     const features = [
-        { icon: 'map', title: 'Explore', subtitle: 'Find Pokemon nearby', screen: 'Map', color: '#d50000' },
-        { icon: 'catching-pokemon', title: 'Pokedex', subtitle: `${caughtPokemon.length}/151 caught`, screen: 'Pokedex', color: '#ff5722' },
-        { icon: 'people', title: 'Community', subtitle: 'See recent catches', screen: 'Community', color: '#ff6f00' },
-        { icon: 'person', title: 'Profile', subtitle: 'View your collection', screen: 'Profile', color: '#f4511e' },
+        { icon: 'map', title: 'Explore', subtitle: 'Find Pokemon nearby', screen: 'MapTab', color: '#d50000' },
+        { icon: 'catching-pokemon', title: 'Pokedex', subtitle: `${caughtPokemon.length}/151 caught`, screen: 'PokedexTab', color: '#ff5722' },
+        { icon: 'people', title: 'Community', subtitle: 'See recent catches', screen: 'CommunityTab', color: '#ff6f00' },
+        { icon: 'person', title: 'Profile', subtitle: 'View your collection', screen: 'ProfileTab', color: '#f4511e' },
     ];
 
     return (
@@ -36,8 +36,8 @@ const HomeScreen = ({ navigation }: any) => {
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Stats Card */}
                 <View style={styles.statsCard}>
-                    <Image 
-                        source={require('../../assets/pokeball-login-signup.png')} 
+                    <Image
+                        source={require('../../assets/pokeball-login-signup.png')}
                         style={styles.pokeballBg}
                     />
                     <View style={styles.statsContent}>
@@ -70,7 +70,12 @@ const HomeScreen = ({ navigation }: any) => {
                             style={[styles.featureCard, { backgroundColor: feature.color }]}
                             onPress={() => navigation.navigate(feature.screen)}
                         >
-                            <MaterialIcons name={feature.icon as any} size={40} color="white" />
+                            <MaterialIcons
+                                name={feature.icon as any}
+                                size={40}
+                                color="white"
+                                style={feature.title === 'Pokedex' ? { transform: [{ rotate: '180deg' }] } : undefined}
+                            />
                             <Text style={styles.featureTitle}>{feature.title}</Text>
                             <Text style={styles.featureSubtitle}>{feature.subtitle}</Text>
                         </TouchableOpacity>
@@ -93,9 +98,9 @@ const HomeScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: '#f8f9fa' 
+    container: {
+        flex: 1,
+        backgroundColor: '#f8f9fa'
     },
     header: {
         flexDirection: 'row',

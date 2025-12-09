@@ -14,7 +14,7 @@ const CatchScreen = ({ route, navigation }: any) => {
     const { pokemonId, pokemonName } = route.params;
     const [permission, requestPermission] = useCameraPermissions();
     const [caught, setCaught] = useState(false);
-    const { markCaught } = usePokemon();
+    const { markCaught, isCaught } = usePokemon();
     const { user, userData } = useUser();
 
     // Animation Values
@@ -114,8 +114,8 @@ const CatchScreen = ({ route, navigation }: any) => {
         setCaught(true);
         markCaught(pokemonId); // Save to persistence
 
-        // Post to Community Feed (Fire and forget)
-        if (user) {
+        // Post to Community Feed (Fire and forget, only if new)
+        if (user && !isCaught(pokemonId)) {
             try {
                 await addDoc(collection(db, "posts"), {
                     username: userData?.username || user.displayName || 'Trainer',

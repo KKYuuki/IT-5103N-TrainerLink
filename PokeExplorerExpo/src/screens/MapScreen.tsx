@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, Alert, TouchableOpacity, Image, Platform } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, Alert, TouchableOpacity, Image, Platform, Linking } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useUser } from '../context/UserContext';
@@ -10,12 +10,16 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { checkGridForSpawns, SpawnLocation } from '../utils/spawning';
 import { getBiomeAtLocation, isRarePokemon, isLegendaryPokemon } from '../utils/procedural';
 
+import { pokemonNames } from '../utils/pokemonNames';
+
 // Configure notifications
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
         shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
     }),
 });
 
@@ -296,7 +300,17 @@ const MapScreen = ({ navigation }: any) => {
         }
     };
 
-    if (errorMsg) return <View style={styles.container}><Text>{errorMsg}</Text></View>;
+    if (errorMsg) return (
+        <View style={styles.container}>
+            <Text style={{ marginBottom: 20 }}>{errorMsg}</Text>
+            <TouchableOpacity
+                onPress={() => Linking.openSettings()}
+                style={{ padding: 10, backgroundColor: '#0091ea', borderRadius: 5 }}
+            >
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>Open Settings</Text>
+            </TouchableOpacity>
+        </View>
+    );
     if (!realLocation) return <View style={styles.container}><ActivityIndicator size="large" color="#ff0000" /><Text>GPS Locking...</Text></View>;
 
     const playerLat = realLocation.coords.latitude + offset.lat;
@@ -360,7 +374,7 @@ const MapScreen = ({ navigation }: any) => {
                             // @ts-ignore
                             navigation.navigate('Catch', {
                                 pokemonId: spawn.pokemonId,
-                                pokemonName: 'Wild Pokemon'
+                                pokemonName: pokemonNames[spawn.pokemonId - 1] || 'Wild Pokemon'
                             });
                         }}
                     >

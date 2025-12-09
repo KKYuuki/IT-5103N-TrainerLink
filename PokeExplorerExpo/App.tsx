@@ -11,6 +11,7 @@ import { UserProvider, useUser } from './src/context/UserContext';
 import { PokemonProvider } from './src/context/PokemonContext';
 
 // Screens
+import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
 import PokedexScreen from './src/screens/PokedexScreen';
@@ -19,6 +20,7 @@ import MapScreen from './src/screens/MapScreen';
 import CatchScreen from './src/screens/CatchScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import CommunityScreen from './src/screens/CommunityScreen';
+import HuntScreen from './src/screens/HuntScreen';
 
 // Suppress annoying warnings
 LogBox.ignoreLogs([
@@ -37,11 +39,27 @@ const MainTabNavigator = () => {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
       <Tab.Screen
+        name="HomeTab"
+        component={HomeScreen}
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="home" size={size} color={color} />
+        }}
+      />
+      <Tab.Screen
         name="MapTab"
         component={MapScreen}
         options={{
           title: 'Map',
           tabBarIcon: ({ color, size }) => <MaterialIcons name="map" size={size} color={color} />
+        }}
+      />
+      <Tab.Screen
+        name="HuntTab"
+        component={HuntScreen}
+        options={{
+          title: 'Hunt',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="track-changes" size={size} color={color} />
         }}
       />
       <Tab.Screen

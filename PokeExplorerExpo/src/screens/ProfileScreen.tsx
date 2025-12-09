@@ -38,13 +38,10 @@ const ProfileScreen = ({ navigation }: any) => {
                             style={styles.pokemonImage}
                         />
                     ) : (
-                        <>
-                            <Image
-                                source={{ uri: imageUrl }}
-                                style={[styles.pokemonImage, styles.silhouette]}
-                            />
-                            <MaterialIcons name="lock" size={20} color="rgba(0,0,0,0.3)" style={styles.lockIcon} />
-                        </>
+                        <Image
+                            source={{ uri: imageUrl }}
+                            style={[styles.pokemonImage, styles.silhouette]}
+                        />
                     )}
                 </TouchableOpacity>
                 <Text style={styles.pokemonId}>#{id.toString().padStart(3, '0')}</Text>
@@ -104,9 +101,9 @@ const ProfileScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: '#f8f9fa' 
+    container: {
+        flex: 1,
+        backgroundColor: '#f8f9fa'
     },
     header: {
         backgroundColor: '#d50000',
@@ -125,7 +122,7 @@ const styles = StyleSheet.create({
         right: -20,
     },
     headerIcon: {
-        transform: [{ rotate: '15deg' }],
+        transform: [{ rotate: '195deg' }],
     },
     headerContent: {
         flexDirection: 'row',
@@ -133,29 +130,29 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatar: {
-        width: 70, 
-        height: 70, 
+        width: 70,
+        height: 70,
         borderRadius: 35,
         backgroundColor: 'rgba(255,255,255,0.25)',
-        justifyContent: 'center', 
+        justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,
-        borderWidth: 3, 
+        borderWidth: 3,
         borderColor: 'white',
         elevation: 4,
     },
-    userInfo: { 
-        flex: 1 
+    userInfo: {
+        flex: 1
     },
-    userName: { 
-        color: 'white', 
-        fontSize: 24, 
+    userName: {
+        color: 'white',
+        fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 4,
     },
-    userEmail: { 
-        color: 'rgba(255,255,255,0.9)', 
-        fontSize: 13, 
+    userEmail: {
+        color: 'rgba(255,255,255,0.9)',
+        fontSize: 13,
         marginBottom: 10,
     },
     statsRow: {
@@ -189,7 +186,7 @@ const styles = StyleSheet.create({
         color: '#999',
         marginTop: 2,
     },
-    listContent: { 
+    listContent: {
         padding: 12,
         paddingBottom: 100,
     },
@@ -201,7 +198,7 @@ const styles = StyleSheet.create({
     imageContainer: {
         width: ITEM_SIZE - 20,
         height: ITEM_SIZE - 20,
-        justifyContent: 'center', 
+        justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 6,
         backgroundColor: 'white',
@@ -216,7 +213,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f5f5f5',
     },
     pokemonImage: {
-        width: '90%', 
+        width: '90%',
         height: '90%',
         resizeMode: 'contain',
     },
@@ -227,14 +224,14 @@ const styles = StyleSheet.create({
     lockIcon: {
         position: 'absolute',
     },
-    pokemonId: { 
-        fontSize: 11, 
+    pokemonId: {
+        fontSize: 11,
         color: '#999',
         fontWeight: '600',
     },
-    pokemonName: { 
-        fontSize: 11, 
-        fontWeight: 'bold', 
+    pokemonName: {
+        fontSize: 11,
+        fontWeight: 'bold',
         color: '#333',
         textAlign: 'center',
     },
