@@ -86,8 +86,14 @@ const PokedexScreen = ({ navigation }: any) => {
                 style={styles.card}
                 onPress={() => navigation.navigate('PokemonDetail', { pokemonId: id, pokemonName: item.name })}
             >
+                <View style={styles.cardBg}>
+                    <MaterialIcons name="catching-pokemon" size={60} color="rgba(213, 0, 0, 0.1)" />
+                </View>
                 <Image source={{ uri: imageUrl }} style={styles.image} />
-                <Text style={styles.name}>{item.name.charAt(0).toUpperCase() + item.name.slice(1)}</Text>
+                <View style={styles.cardFooter}>
+                    <Text style={styles.pokemonNumber}>#{id.padStart(3, '0')}</Text>
+                    <Text style={styles.name}>{item.name.charAt(0).toUpperCase() + item.name.slice(1)}</Text>
+                </View>
             </TouchableOpacity>
         );
     };
@@ -103,23 +109,33 @@ const PokedexScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Custom Header with Safe Area Handling */}
+            {/* Modern Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Pokedex</Text>
+                <View style={styles.headerLeft}>
+                    <MaterialIcons name="catching-pokemon" size={28} color="white" />
+                    <View style={styles.headerTextContainer}>
+                        <Text style={styles.headerTitle}>Pokedex</Text>
+                        <Text style={styles.headerSubtitle}>Discover all Pokemon</Text>
+                    </View>
+                </View>
                 <TouchableOpacity onPress={() => signOut(auth)} style={styles.logoutBtn}>
-                    <MaterialIcons name="logout" size={24} color="red" />
+                    <MaterialIcons name="logout" size={24} color="white" />
                 </TouchableOpacity>
             </View>
 
             <View style={styles.searchContainer}>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Search Pokemon (Name or ID)..."
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    onSubmitEditing={handleSearch}
-                    returnKeyType="search"
-                />
+                <View style={styles.searchInputWrapper}>
+                    <MaterialIcons name="search" size={20} color="#999" style={styles.searchIcon} />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Search by name or ID..."
+                        placeholderTextColor="#999"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        onSubmitEditing={handleSearch}
+                        returnKeyType="search"
+                    />
+                </View>
                 <TouchableOpacity
                     style={styles.searchButton}
                     onPress={handleSearch}
@@ -128,7 +144,7 @@ const PokedexScreen = ({ navigation }: any) => {
                     {searching ? (
                         <ActivityIndicator color="white" size="small" />
                     ) : (
-                        <MaterialIcons name="search" size={24} color="white" />
+                        <MaterialIcons name="arrow-forward" size={24} color="white" />
                     )}
                 </TouchableOpacity>
             </View>
@@ -142,6 +158,7 @@ const PokedexScreen = ({ navigation }: any) => {
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={renderFooter}
                 contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
             />
         </SafeAreaView>
     );
@@ -150,75 +167,123 @@ const PokedexScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, // Extra padding for Android Status Bar
+        backgroundColor: '#f8f9fa',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 15,
-        backgroundColor: 'white',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        paddingVertical: 16,
+        backgroundColor: '#d50000',
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+    },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    headerTextContainer: {
+        marginLeft: 12,
     },
     headerTitle: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: '#333',
+        color: 'white',
+    },
+    headerSubtitle: {
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.9)',
+        marginTop: 2,
     },
     logoutBtn: {
-        padding: 5,
+        padding: 8,
     },
     searchContainer: {
         flexDirection: 'row',
-        padding: 10,
+        padding: 16,
         backgroundColor: 'white',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
+        elevation: 2,
         alignItems: 'center',
+    },
+    searchInputWrapper: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5',
+        borderRadius: 25,
+        paddingHorizontal: 16,
+        marginRight: 12,
+        height: 50,
+    },
+    searchIcon: {
+        marginRight: 8,
     },
     input: {
         flex: 1,
-        height: 40,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 20,
-        paddingHorizontal: 15,
-        marginRight: 10,
+        fontSize: 15,
+        color: '#333',
     },
     searchButton: {
         backgroundColor: '#ff5722',
-        padding: 10,
-        borderRadius: 20,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 4,
     },
     listContent: {
-        padding: 10,
+        padding: 12,
+        paddingBottom: 100,
     },
     card: {
         flex: 1,
-        margin: 5,
+        margin: 6,
         backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 10,
+        borderRadius: 16,
+        padding: 12,
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    cardBg: {
+        position: 'absolute',
+        top: -10,
+        right: -10,
     },
     image: {
-        width: 100,
-        height: 100,
+        width: 110,
+        height: 110,
+        marginVertical: 8,
+    },
+    cardFooter: {
+        alignItems: 'center',
+        width: '100%',
+    },
+    pokemonNumber: {
+        fontSize: 12,
+        color: '#999',
+        fontWeight: '600',
     },
     name: {
-        marginTop: 10,
-        fontSize: 16,
+        marginTop: 4,
+        fontSize: 15,
         fontWeight: 'bold',
+        color: '#333',
     },
     footer: {
-        padding: 10,
+        padding: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },

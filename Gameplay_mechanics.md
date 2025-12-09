@@ -129,6 +129,6 @@ seed = gridX * 73856093 ^ gridY * 19349663 ^ timeShift * 83492791
 
 ---
 
-## Generation 1 Pokemon (Kanto Region)
+## Generation 1 Pokemon
 
 This game features Pokemon #1-151 from the original Pokemon Red/Blue/Yellow games.
