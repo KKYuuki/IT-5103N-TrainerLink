@@ -10,6 +10,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { checkGridForSpawns, SpawnLocation } from '../utils/spawning';
 import { getBiomeAtLocation, isRarePokemon, isLegendaryPokemon } from '../utils/procedural';
 import { pokemonNames } from '../utils/pokemonNames';
+import PokemonMarker from '../components/PokemonMarker';
 import Voice, { SpeechResultsEvent } from '@react-native-voice/voice';
 
 // Haversine distance helper
@@ -38,6 +39,9 @@ const HuntScreen = ({ navigation }: any) => {
     const [hasZoomed, setHasZoomed] = useState(false);
     const [currentBiome, setCurrentBiome] = useState<string>("Loading...");
     const [sortedSpawns, setSortedSpawns] = useState<{ name: string; dist: number; id: number }[]>([]);
+
+    // New State for Lure
+    const [lureTarget, setLureTarget] = useState<{ id: number, name: string, expiresAt: number } | null>(null);
 
     const lastSpawnLocation = useRef<{ lat: number, lng: number } | null>(null);
     const soundRef = useRef<Audio.Sound | null>(null);
@@ -263,23 +267,17 @@ const HuntScreen = ({ navigation }: any) => {
                 </Marker>
 
                 {spawns.map((spawn) => (
-                    <Marker
+                    <PokemonMarker
                         key={spawn.id}
-                        coordinate={{ latitude: spawn.latitude, longitude: spawn.longitude }}
-                        anchor={{ x: 0.5, y: 0.5 }}
-                        tracksViewChanges={true}
+                        id={spawn.id}
+                        pokemonId={spawn.pokemonId}
+                        lat={spawn.latitude}
+                        lng={spawn.longitude}
                         onPress={() => navigation.navigate('Catch', {
                             pokemonId: spawn.pokemonId,
                             pokemonName: pokemonNames[spawn.pokemonId - 1]
                         })}
-                    >
-                        <View style={{ width: 40, height: 40 }}>
-                            <Image
-                                source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${spawn.pokemonId}.png` }}
-                                style={{ width: 40, height: 40, resizeMode: 'contain', opacity: 0.8 }}
-                            />
-                        </View>
-                    </Marker>
+                    />
                 ))}
             </MapView>
 
@@ -467,6 +465,16 @@ const styles = StyleSheet.create({
     radarName: { color: 'white', fontWeight: 'bold', fontSize: 16, flex: 1 },
     radarDist: { flexDirection: 'row', alignItems: 'center' },
     distText: { color: '#00ff00', fontWeight: 'bold', marginRight: 5, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
+
+    // Lure Banner
+    lureBanner: {
+        position: 'absolute', top: 110, alignSelf: 'center',
+        backgroundColor: 'rgba(50,50,50,0.9)', flexDirection: 'row', alignItems: 'center',
+        padding: 8, borderRadius: 20, borderWidth: 1, borderColor: '#ffeb3b',
+        elevation: 5
+    },
+    lureText: { color: '#ffeb3b', fontWeight: 'bold', marginHorizontal: 10 },
+    lureTimer: { color: 'white', fontWeight: 'bold', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
 
     // Debug DPad
     dpadContainer: { position: 'absolute', bottom: 200, left: 20 },

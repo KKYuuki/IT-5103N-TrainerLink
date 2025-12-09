@@ -11,6 +11,7 @@ import { checkGridForSpawns, SpawnLocation } from '../utils/spawning';
 import { getBiomeAtLocation, isRarePokemon, isLegendaryPokemon } from '../utils/procedural';
 
 import { pokemonNames } from '../utils/pokemonNames';
+import PokemonMarker from '../components/PokemonMarker';
 
 // Configure notifications
 Notifications.setNotificationHandler({
@@ -358,11 +359,12 @@ const MapScreen = ({ navigation }: any) => {
 
                 {/* Spawns rendering */}
                 {spawns.map((spawn) => (
-                    <Marker
+                    <PokemonMarker
                         key={spawn.id}
-                        coordinate={{ latitude: spawn.latitude, longitude: spawn.longitude }}
-                        anchor={{ x: 0.5, y: 0.5 }}
-                        tracksViewChanges={true} // FORCE TRUE to fix invisible images
+                        id={spawn.id}
+                        pokemonId={spawn.pokemonId}
+                        lat={spawn.latitude}
+                        lng={spawn.longitude}
                         onPress={() => {
                             const dist = getDistance(playerLat, playerLng, spawn.latitude, spawn.longitude);
 
@@ -377,15 +379,7 @@ const MapScreen = ({ navigation }: any) => {
                                 pokemonName: pokemonNames[spawn.pokemonId - 1] || 'Wild Pokemon'
                             });
                         }}
-                    >
-                        {/* Added background color to verify position even if image fails */}
-                        <View style={{ width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' }}>
-                            <Image
-                                source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${spawn.pokemonId}.png` }}
-                                style={{ width: 50, height: 50, resizeMode: 'contain' }}
-                            />
-                        </View>
-                    </Marker>
+                    />
                 ))}
             </MapView>
 
