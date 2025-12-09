@@ -100,24 +100,31 @@ const HuntScreen = ({ navigation }: any) => {
     useEffect(() => {
         const onSpeechResults = (e: SpeechResultsEvent) => {
             if (e.value && e.value.length > 0) {
-                const spokenText = e.value[0];
-                processShout(spokenText);
+                // Final result (update input one last time)
+                setManualInput(e.value[0]);
                 setIsListening(false);
-                Voice.stop();
+            }
+        };
+
+        const onSpeechPartialResults = (e: SpeechResultsEvent) => {
+            if (e.value && e.value.length > 0) {
+                // Live transcription
+                setManualInput(e.value[0]);
             }
         };
 
         const onSpeechError = (e: any) => {
+            console.log("Speech Error:", e);
             setIsListening(false);
-            // If native voice fails (e.g. Expo Go), fallback to manual
-            if (e.error?.message?.includes('not available') || e.error?.code === '5' || e.error?.code === '7') {
-                setShowInputModal(true);
-            } else {
-                Alert.alert("Voice Error", "Could not hear you. Try getting closer.");
+            // Don't alert "No Match" (7) aggressively, just let user type
+            if (e.error?.code !== '7') {
+                // only show alert for weird errors
+                // Alert.alert("Voice Debug", `Code: ${e.error?.code}`);
             }
         };
 
         Voice.onSpeechResults = onSpeechResults;
+        Voice.onSpeechPartialResults = onSpeechPartialResults;
         Voice.onSpeechError = onSpeechError;
 
         return () => {
@@ -140,18 +147,27 @@ const HuntScreen = ({ navigation }: any) => {
     };
 
     const handleShout = async () => {
+        // 1. Open Modal Immediately
+        setManualInput('');
+        setShowInputModal(true);
+        setIsListening(true);
+
         try {
-            setIsListening(true);
+            // 2. Request Permission
+            const { status } = await Audio.requestPermissionsAsync();
+            if (status !== 'granted') {
+                setIsListening(false);
+                Alert.alert("Permission", "Mic permission required for voice.");
+                return;
+            }
+
+            // 3. Start Listening
+            await Voice.stop(); // Clear any previous session
             await Voice.start('en-US');
-            // Timeout to fallback if no voice engine exists (Expo Go often hangs instead of erroring instantly)
-            setTimeout(() => {
-                // Check if still "listening" with no partial results? 
-                // For safety in Expo Go without dev client, might just error out.
-            }, 2000);
+
         } catch (e) {
             console.log("Voice start error", e);
             setIsListening(false);
-            setShowInputModal(true);
         }
     };
 
@@ -301,28 +317,49 @@ const HuntScreen = ({ navigation }: any) => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Shout a Name!</Text>
-                        <Text style={styles.modalSubtitle}>(Voice unavailable)</Text>
+
+                        {/* Status Indicator */}
+                        {isListening ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                                <ActivityIndicator color="#d50000" style={{ marginRight: 10 }} />
+                                <Text style={{ color: '#d50000', fontWeight: 'bold' }}>Listening...</Text>
+                            </View>
+                        ) : (
+                            <Text style={styles.modalSubtitle}>Type or say a Pokemon name</Text>
+                        )}
+
                         <TextInput
                             style={styles.modalInput}
-                            placeholder="e.g. Pikachu"
-                            placeholderTextColor="#666"
+                            placeholder="Listening..."
+                            placeholderTextColor="#ccc"
                             value={manualInput}
                             onChangeText={setManualInput}
-                            autoFocus
+                            autoFocus // Keep keyboard up so they can type immediately if voice fails
                         />
+
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity onPress={() => setShowInputModal(false)} style={styles.modalBtnCancel}>
-                                <Text style={styles.modalBtnText}>Cancel</Text>
-                            </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => {
+                                    setIsListening(false);
+                                    Voice.stop();
+                                    setShowInputModal(false);
+                                }}
+                                style={styles.modalBtnCancel}
+                            >
+                                <Text style={{ color: '#666' }}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setIsListening(false);
+                                    Voice.stop();
                                     setShowInputModal(false);
                                     processShout(manualInput);
                                     setManualInput('');
                                 }}
                                 style={styles.modalBtnSubmit}
                             >
-                                <Text style={styles.modalBtnText}>SHOUT</Text>
+                                <Text style={styles.modalBtnText}>SHOUT!</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
