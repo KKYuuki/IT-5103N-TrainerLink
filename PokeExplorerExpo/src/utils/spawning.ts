@@ -55,6 +55,15 @@ export const checkGridForSpawns = (
         const dLatK = (spawn.latitude - centerLat) * 111111;
         const dLngK = (spawn.longitude - centerLng) * 111111 * Math.cos(centerLat * Math.PI / 180);
         const dist = Math.sqrt(dLatK * dLatK + dLngK * dLngK);
+
+        // Special Visibility Rule for Legendaries (User Request: 50m)
+        // Special Visibility Rule for Legendaries
+        // We allow them in the list if within 200m (so we can Notify "Nearby!")
+        // But the UI will hide them until 50m.
+        if (spawn.biome === 'LEGENDARY') {
+            return dist <= 200;
+        }
+
         return dist <= visibleRadius;
     });
 };
@@ -123,10 +132,14 @@ const getSpawnsForSector = (
                 const latIdx = sectorX * SECTOR_SIZE + subX;
                 const lngIdx = sectorY * SECTOR_SIZE + subY;
 
+                const finalLat = (latIdx * GRID_SIZE) + (GRID_SIZE / 2);
+                const finalLng = (lngIdx * GRID_SIZE) + (GRID_SIZE / 2);
+
+                // Push Standard Spawn
                 spawns.push({
                     id: `spawn_sec_${sectorX}_${sectorY}_${latIdx}_${lngIdx}_${hour}`,
-                    latitude: (latIdx * GRID_SIZE) + (GRID_SIZE / 2),
-                    longitude: (lngIdx * GRID_SIZE) + (GRID_SIZE / 2),
+                    latitude: finalLat,
+                    longitude: finalLng,
                     pokemonId: pid,
                     despawnTime: (hour + 1) * 60 * 60 * 1000,
                     biome: biome
@@ -135,5 +148,52 @@ const getSpawnsForSector = (
         }
     }
 
+    // --- LEGENDARY OVERRIDE (SINGLETON / HIGHLANDER RULE) ---
+    // Instead of replacing every spawn in the zone (Swarm), we verify if the current SECTOR
+    // contains the center point of a Legendary Zone. If it does, we deterministically ADD
+    // exactly one instance of that Legendary to the spawn list at its exact location.
+
+    // We import here to avoid circular dependency issues at top level if any
+    const { LEGENDARY_ZONES } = require('./zones');
+
+    for (const zone of LEGENDARY_ZONES) {
+        if (zone.legendaryId) {
+            // Find which sector this legendary BELONGS to
+            const zLatIdx = Math.round(zone.lat / GRID_SIZE);
+            const zLngIdx = Math.round(zone.lng / GRID_SIZE);
+
+            const zSectorX = Math.floor(zLatIdx / SECTOR_SIZE);
+            const zSectorY = Math.floor(zLngIdx / SECTOR_SIZE);
+
+            // If the sector we are currently generating (sectorX, sectorY) is the owner of this Legendary...
+            if (sectorX === zSectorX && sectorY === zSectorY) {
+                // ...Then we check if we should spawn it (Time based? Always? For now: ALWAYS).
+                // "Preloaded" spawn.
+
+                console.log(`Injecting Unique Legendary: ${zone.name}`);
+
+                spawns.push({
+                    id: `legendary_unique_${zone.legendaryId}_${hour}`, // Unique ID per hour
+                    latitude: zone.lat, // Exact Center
+                    longitude: zone.lng,
+                    pokemonId: zone.legendaryId,
+                    despawnTime: (hour + 1) * 60 * 60 * 1000,
+                    biome: 'LEGENDARY' // Special biome tag
+                });
+            }
+        }
+    }
+
     return spawns;
+};
+
+// Helper to check distance (Duped from procedural to avoid cycle, or move to utils)
+const getDistMeters = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371e3;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };

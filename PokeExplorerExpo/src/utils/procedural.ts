@@ -40,7 +40,41 @@ export type BiomeType = 'URBAN' | 'RURAL' | 'FOREST' | 'WATER' | 'GRASS';
  * Determines the "Biome" of a location based on coordinate noise.
  * Uses Multi-Layer Noise to simulate realistic geography (Cities vs Nature).
  */
+import { LEGENDARY_ZONES, BIOME_REGIONS, Zone } from './zones';
+
+// Helper to check distance (Haversine simplified for speed)
+const getDistMeters = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371e3;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+/**
+ * Determines the "Biome" of a location based on coordinate noise AND Zones.
+ */
 export const getBiomeAtLocation = (lat: number, lng: number): BiomeType => {
+
+    // 1. Check LEGENDARY ZONES (Highest Priority)
+    for (const zone of LEGENDARY_ZONES) {
+        if (getDistMeters(lat, lng, zone.lat, zone.lng) <= zone.radius) {
+            if (zone.forcedBiome) return zone.forcedBiome as BiomeType;
+        }
+    }
+
+    // 2. Check BIOME REGIONS (City overrides)
+    for (const zone of BIOME_REGIONS) {
+        if (getDistMeters(lat, lng, zone.lat, zone.lng) <= zone.radius) {
+            // Add a little noise so parks still exist in cities?
+            // For now, hard override to fix the "Water in Subdivision" bug
+            return zone.forcedBiome as BiomeType;
+        }
+    }
+
+    // 3. Fallback to Noise (Original Logic)
     // Layer 1: Macro Scale (~1km blocks) - Determines City vs Nature
     const macroNoise = getGridHash(lat * 0.01, lng * 0.01, 8888);
 

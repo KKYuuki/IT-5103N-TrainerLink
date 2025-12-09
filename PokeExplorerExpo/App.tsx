@@ -23,13 +23,8 @@ import CommunityScreen from './src/screens/CommunityScreen';
 import HuntScreen from './src/screens/HuntScreen';
 
 // Suppress annoying warnings
-LogBox.ignoreLogs([
-  'You are initializing Firebase Auth',
-  'Task orphaned for request',
-  'expo-notifications: Android Push',
-  'functionality is not fully supported',
-  'SafeAreaView has been deprecated',
-]);
+// Suppress annoying warnings
+LogBox.ignoreAllLogs(true);
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();

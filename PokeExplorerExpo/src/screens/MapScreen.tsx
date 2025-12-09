@@ -44,6 +44,7 @@ const MapScreen = ({ navigation }: any) => {
     const mapRef = useRef<MapView>(null);
     const [realLocation, setRealLocation] = useState<Location.LocationObject | null>(null);
     const [offset, setOffset] = useState({ lat: 0, lng: 0 }); // Manual movement offset
+    const [speedMultiplier, setSpeedMultiplier] = useState(1); // 1x = Walk, 5x = Run, 20x = Car
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [spawns, setSpawns] = useState<SpawnLocation[]>([]);
     const [isMapReady, setIsMapReady] = useState(false);
@@ -162,8 +163,13 @@ const MapScreen = ({ navigation }: any) => {
             return () => {
                 console.log('Unloading Sound');
                 if (soundRef.current) {
-                    soundRef.current.stopAsync();
-                    soundRef.current.unloadAsync();
+                    try {
+                        soundRef.current.stopAsync();
+                        soundRef.current.unloadAsync();
+                    } catch (e) {
+                        // Ignore thread errors on reload
+                        console.log("Audio cleanup warning:", e);
+                    }
                     soundRef.current = null;
                 }
             };
@@ -198,7 +204,13 @@ const MapScreen = ({ navigation }: any) => {
         const legendarySpawn = newSpawns.find(s => isLegendaryPokemon(s.pokemonId));
 
         if (legendarySpawn) {
+            console.log("NOTIFY: Legendary Detected!", legendarySpawn.pokemonId);
             // Legendary Notification (High Priority)
+            // Reduced grace period for debugging (10s -> 0s if needed, or keeping it)
+            // But we must check if we actually notified recently.
+
+            console.log("NOTIFY: Time check", now - lastNotificationTime.current);
+
             if (now - lastNotificationTime.current > 10000) { // 10s grace period for distinct events
 
                 let title = "⚠️ LEGENDARY DETECTED ⚠️";
@@ -285,7 +297,10 @@ const MapScreen = ({ navigation }: any) => {
     };
 
     const movePlayer = (dLat: number, dLng: number) => {
-        setOffset(prev => ({ lat: prev.lat + dLat, lng: prev.lng + dLng }));
+        setOffset(prev => ({
+            lat: prev.lat + (dLat * speedMultiplier),
+            lng: prev.lng + (dLng * speedMultiplier)
+        }));
     };
 
     const recenterMap = () => {
@@ -358,29 +373,38 @@ const MapScreen = ({ navigation }: any) => {
                 </Marker>
 
                 {/* Spawns rendering */}
-                {spawns.map((spawn) => (
-                    <PokemonMarker
-                        key={spawn.id}
-                        id={spawn.id}
-                        pokemonId={spawn.pokemonId}
-                        lat={spawn.latitude}
-                        lng={spawn.longitude}
-                        onPress={() => {
-                            const dist = getDistance(playerLat, playerLng, spawn.latitude, spawn.longitude);
+                {/* Spawns rendering */}
+                {spawns.map((spawn) => {
+                    // Radar Visibility Check
+                    const dist = getDistance(playerLat, playerLng, spawn.latitude, spawn.longitude);
 
-                            if (dist > 30) {
-                                Alert.alert("Too Far!", `Get closer to interact! (${Math.round(dist)}m away)`);
-                                return;
-                            }
+                    // LEGENDARY RULE: Invisible until 50m close (But already notified at 200m)
+                    if (spawn.biome === 'LEGENDARY' && dist > 50) {
+                        return null;
+                    }
 
-                            // @ts-ignore
-                            navigation.navigate('Catch', {
-                                pokemonId: spawn.pokemonId,
-                                pokemonName: pokemonNames[spawn.pokemonId - 1] || 'Wild Pokemon'
-                            });
-                        }}
-                    />
-                ))}
+                    return (
+                        <PokemonMarker
+                            key={spawn.id}
+                            id={spawn.id}
+                            pokemonId={spawn.pokemonId}
+                            lat={spawn.latitude}
+                            lng={spawn.longitude}
+                            onPress={() => {
+                                if (dist > 30) {
+                                    Alert.alert("Too Far!", `Get closer to interact! (${Math.round(dist)}m away)`);
+                                    return;
+                                }
+
+                                // @ts-ignore
+                                navigation.navigate('Catch', {
+                                    pokemonId: spawn.pokemonId,
+                                    pokemonName: pokemonNames[spawn.pokemonId - 1] || 'Wild Pokemon'
+                                });
+                            }}
+                        />
+                    );
+                })}
             </MapView>
 
             {/* Recenter Button */}
@@ -388,8 +412,20 @@ const MapScreen = ({ navigation }: any) => {
                 <MaterialIcons name="my-location" size={24} color="black" />
             </TouchableOpacity>
 
-            {/* D-Pad Controls */}
+            {/* D-Pad Controls with Speed Toggle */}
             <View style={styles.dpadContainer}>
+                <View style={styles.speedToggle}>
+                    <TouchableOpacity style={[styles.speedBtn, speedMultiplier === 1 && styles.activeSpeed]} onPress={() => setSpeedMultiplier(1)}>
+                        <MaterialIcons name="directions-walk" size={20} color={speedMultiplier === 1 ? 'white' : '#666'} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.speedBtn, speedMultiplier === 5 && styles.activeSpeed]} onPress={() => setSpeedMultiplier(5)}>
+                        <MaterialIcons name="directions-run" size={20} color={speedMultiplier === 5 ? 'white' : '#666'} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.speedBtn, speedMultiplier === 20 && styles.activeSpeed]} onPress={() => setSpeedMultiplier(20)}>
+                        <MaterialIcons name="directions-car" size={20} color={speedMultiplier === 20 ? 'white' : '#666'} />
+                    </TouchableOpacity>
+                </View>
+
                 <TouchableOpacity style={styles.dpadBtn} onPress={() => movePlayer(0.0001, 0)}>
                     <MaterialIcons name="keyboard-arrow-up" size={30} color="black" />
                 </TouchableOpacity>
@@ -405,17 +441,6 @@ const MapScreen = ({ navigation }: any) => {
                     <MaterialIcons name="keyboard-arrow-down" size={30} color="black" />
                 </TouchableOpacity>
             </View>
-
-            {/* Manual Respawn Button */}
-            <TouchableOpacity
-                style={styles.fab}
-                onPress={() => {
-                    checkAndSpawn(realLocation.coords.latitude, realLocation.coords.longitude);
-                    Alert.alert("Scanned!", `Checked for pokemon in ${currentBiome} biome.`);
-                }}
-            >
-                <Text style={{ color: 'white', fontWeight: 'bold' }}>SCAN AREA</Text>
-            </TouchableOpacity>
         </View>
     );
 };

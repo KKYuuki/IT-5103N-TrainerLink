@@ -17,7 +17,7 @@ const COLUMNS = 4;
 const ITEM_SIZE = SCREEN_WIDTH / COLUMNS;
 
 const ProfileScreen = ({ navigation }: any) => {
-    const { user } = useUser();
+    const { user, badges } = useUser();
     const { isCaught, caughtPokemon } = usePokemon();
 
     const renderPokemonItem = ({ item: id }: { item: number }) => {
@@ -77,6 +77,28 @@ const ProfileScreen = ({ navigation }: any) => {
                                 <Text style={styles.statText}>{Math.round((caughtPokemon.length / 151) * 100)}%</Text>
                             </View>
                         </View>
+                    </View>
+                </View>
+            </View>
+
+            {/* Quest Stats & Badges */}
+            <View style={styles.badgeSection}>
+                <Text style={styles.sectionTitle}>Trainer Badges</Text>
+                <View style={styles.badgeGrid}>
+                    {badges?.map((badge: any) => (
+                        <View key={badge.id} style={styles.badgeItem}>
+                            <View style={[styles.badgeIcon, { backgroundColor: badge.color }]}>
+                                <MaterialIcons name={badge.icon} size={24} color="white" />
+                            </View>
+                            <Text style={styles.badgeName}>{badge.name}</Text>
+                        </View>
+                    ))}
+                    {/* Add placeholder locked badges */}
+                    <View style={[styles.badgeItem, { opacity: 0.5 }]}>
+                        <View style={[styles.badgeIcon, { backgroundColor: '#ccc' }]}>
+                            <MaterialIcons name="lock" size={24} color="white" />
+                        </View>
+                        <Text style={styles.badgeName}>???</Text>
                     </View>
                 </View>
             </View>
@@ -176,6 +198,13 @@ const styles = StyleSheet.create({
         padding: 20,
         paddingBottom: 12,
     },
+    // Badge Styles
+    badgeSection: { padding: 20, paddingBottom: 0 },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 15 },
+    badgeGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+    badgeItem: { alignItems: 'center', marginRight: 20, marginBottom: 15, width: 60 },
+    badgeIcon: { width: 45, height: 45, borderRadius: 22.5, justifyContent: 'center', alignItems: 'center', marginBottom: 5, elevation: 3 },
+    badgeName: { fontSize: 10, textAlign: 'center', color: '#666' },
     collectionTitle: {
         fontSize: 20,
         fontWeight: 'bold',

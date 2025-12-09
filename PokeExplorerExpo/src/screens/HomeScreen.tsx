@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
@@ -10,7 +10,7 @@ import { usePokemon } from '../context/PokemonContext';
 const { width } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }: any) => {
-    const { user } = useUser();
+    const { user, dailyQuests, completeQuest } = useUser();
     const { caughtPokemon } = usePokemon();
 
     const features = [
@@ -34,7 +34,52 @@ const HomeScreen = ({ navigation }: any) => {
             </View>
 
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                {/* Daily Quests Card */}
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Daily Research</Text>
+                    <Text style={styles.sectionSubtitle}>Resets in 12h</Text>
+                </View>
+
+                {dailyQuests.map((quest) => (
+                    <TouchableOpacity
+                        key={quest.id}
+                        style={[styles.questCard, quest.isCompleted && styles.questCardCompleted]}
+                        onPress={() => {
+                            if (!quest.isCompleted) {
+                                // For Demo: Tap to complete
+                                Alert.alert(
+                                    "Complete Quest?",
+                                    `Mark "${quest.title}" as done?`,
+                                    [
+                                        { text: "Cancel" },
+                                        { text: "Complete", onPress: () => completeQuest(quest.id) }
+                                    ]
+                                );
+                            }
+                        }}
+                    >
+                        <View style={styles.questInfo}>
+                            <Text style={[styles.questTitle, quest.isCompleted && styles.textCompleted]}>{quest.title}</Text>
+                            <Text style={styles.questDesc}>{quest.description}</Text>
+                        </View>
+                        <View style={styles.questProgress}>
+                            {quest.isCompleted ? (
+                                <MaterialIcons name="check-circle" size={24} color="#4caf50" />
+                            ) : (
+                                <Text style={styles.questReward}>{quest.reward}</Text>
+                            )}
+                        </View>
+                        {/* Progress Bar */}
+                        {!quest.isCompleted && (
+                            <View style={styles.progressBarBg}>
+                                <View style={[styles.progressBarFill, { width: `${(quest.progress / quest.target) * 100}%` }]} />
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                ))}
+
                 {/* Stats Card */}
+                <Text style={styles.sectionTitle}>Journey Stats</Text>
                 <View style={styles.statsCard}>
                     <Image
                         source={require('../../assets/pokeball-login-signup.png')}
@@ -142,6 +187,22 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         position: 'relative',
     },
+    // Quest Styles
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    sectionSubtitle: { color: '#888', fontSize: 12 },
+    questCard: {
+        backgroundColor: 'white', borderRadius: 12, padding: 15, marginBottom: 10,
+        elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3
+    },
+    questCardCompleted: { backgroundColor: '#e8f5e9' },
+    questInfo: { marginBottom: 10 },
+    questTitle: { fontWeight: 'bold', fontSize: 16, color: '#333' },
+    textCompleted: { color: '#4caf50', textDecorationLine: 'line-through' },
+    questDesc: { color: '#666', fontSize: 12 },
+    questProgress: { position: 'absolute', right: 15, top: 15 },
+    questReward: { fontSize: 12, fontWeight: 'bold', color: '#ff9800', backgroundColor: '#fff3e0', padding: 4, borderRadius: 4 },
+    progressBarBg: { height: 6, backgroundColor: '#eee', borderRadius: 3, marginTop: 5 },
+    progressBarFill: { height: 6, backgroundColor: '#2196f3', borderRadius: 3 },
     pokeballBg: {
         position: 'absolute',
         right: -30,

@@ -15,28 +15,16 @@ const PokemonMarker = memo(({ id, pokemonId, lat, lng, onPress }: Props) => {
     // Optimization: Start with true to render, then switch to false to "freeze" the bitmap
     const [tracksViewChanges, setTracksViewChanges] = useState(true);
 
-    // Switch to sprite (96x96) for performance instead of HD (475x475)
-    // Using the classic sprite is 10x smaller in memory
     const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
 
     useEffect(() => {
-        // Once mounted, give it a split second to render the image, then freeze it.
-        // This stops the map from re-rasterizing this marker 60fps.
-        const timer = setTimeout(() => {
-            setTracksViewChanges(false);
-        }, 500); // 500ms allows image to load (usually)
-
-        return () => clearTimeout(timer);
-    }, []);
-
-    // If the pokemon changes (unlikely for same ID), re-enable tracking
-    useEffect(() => {
         setTracksViewChanges(true);
+        // Simple 500ms timeout to render image then freeze
         const timer = setTimeout(() => {
             setTracksViewChanges(false);
-        }, 500);
+        }, 1000); // 1s safety
         return () => clearTimeout(timer);
-    }, [pokemonId]);
+    }, [pokemonId]); // Reset on ID change
 
     return (
         <Marker
@@ -50,9 +38,9 @@ const PokemonMarker = memo(({ id, pokemonId, lat, lng, onPress }: Props) => {
                 <Image
                     source={{ uri: spriteUrl }}
                     style={styles.image}
+                    fadeDuration={0} // Ensure instant appearance
                     onLoad={() => {
-                        // Optional: trigger re-render if loaded after timeout
-                        // But mostly 500ms safety net covers it
+                        // Optional: force update if needed, but timer handles it
                     }}
                 />
             </View>
