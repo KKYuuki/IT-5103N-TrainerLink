@@ -1,125 +1,76 @@
-# PokeExplorer (TrainerLink Setup)
+# PokeExplorerExpo 🌍
 
-This is a React Native project designed as a **Pokemon Go replica**, featuring agentic coding integration (Google Antigravity), Firebase Authentication, and a future map-based gameplay loop.
+**PokeExplorerExpo** is a geolocation-based Augmented Reality (AR) game built with **React Native**. It is a full native Android application that interacts with device sensors, camera, and maps.
 
-## 📋 Prerequisites
-Ensure you have the following installed before running the project:
+---
 
-- **Node.js**: v20 or higher
-- **JDK**: Java 17 (specifically Eclipse Adoptium Temurin is recommended)
-- **Android SDK**: API Level 30 (minimum) and 35 (compile/target)
-- **React Native CLI**: `npm install -g react-native-cli`
+## 🚀 Key Features
 
-## 🚀 Getting Started
+### 🗺️ Geolocation & Map
+*   **Real-World Biomes**: Procedurally generated biomes (Water, Urban, Forest) based on real coordinates.
+*   **Hunt Mode**: Scan your surroundings using GPS to find hidden Pokemon.
+*   **Legendary Radar**: Detect Legendary Pokemon from **200m** away.
+*   **Unique Spawns**: Singleton Legendary encounters at real-world landmarks.
 
-### 1. Install Dependencies
-Run the following inside the project root:
-```bash
-npm install
-```
+### 📸 AR Catch System
+*   **Camera Integration**: Native camera feed for AR catching.
+*   **Parallax Effect**: Gyroscope-enabled "breathing" animations.
+*   **Voice Recognition**: Shout **"Gotcha!"** to trigger capture (Uses Native Microphone).
 
-### 2. Configure Firebase (Important)
-This project requires a `google-services.json` file.
-- Place your `google-services.json` file inside `android/app/`.
-- Ensure the package name inside the JSON is `com.pokeexplorer`.
+### 🎒 Progression
+*   **Pokedex**: Stats and details database.
+*   **Daily Quests & Badges**: Gamified achievements.
 
-### 3. Build & Run (Android)
-Start the Metro Bundler:
-```bash
-npm start
-```
-Run the Android App:
-```bash
-npx react-native run-android
-```
+---
 
-### ⚠️ Common Troubleshooting
+## 🛠️ Technology Stack
 
-**"Filename longer than 260 characters" Error:**
-This project forces `newArchEnabled=false` in `android/gradle.properties` to avoid Windows path length issues. If you encounter this error, move the project folder to a shorter path (e.g., `C:\PokeExplorer`).
+*   **Core**: React Native (0.76)
+*   **Language**: TypeScript
+*   **Editor**: Android Studio (for Native Build)
+*   **Modules**:
+    *   `react-native-maps` (Google Maps)
+    *   `@react-native-voice/voice` (Native Speech Recognition)
+    *   `expo-av` (Audio System)
+    *   `expo-camera` (Camera Access)
+*   **Backend**: Firebase Firestore
 
-**"Stuck on Splash Screen" (Physical Device):**
-If the app launches but freezes on the logo, your device cannot reach the Metro server. Run:
-```bash
-adb reverse tcp:8081 tcp:8081
-```
-(Ensure `adb` is in your PATH or use the full path to `platform-tools`).
+---
 
-## 🛠 Features (Phase 1 Status)
-- ✅ Project Scaffolding (React Native 0.82)
-- ✅ Firebase Authentication (Login/Signup)
-- ✅ Navigation (React Navigation Native Stack)
-- ✅ User Session Management (UserContext)
-- ✅ Android Build Configuration (Gradle 9.0, Android 15/API 35)
+## 📱 Build Instructions (Android Studio)
 
-# Getting Started
+This project is a standard React Native app. It contains a native `android` directory that can be compiled with Gradle.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+### Prerequisites
+*   Node.js (v18+)
+*   Java JDK 17
+*   Android Studio
 
-## Step 1: Start Metro
+### How to Run
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+1.  **Install Dependencies**
+    ```bash
+    npm install
+    ```
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+2.  **Generate Native Android Project**
+    (This ensures the `android/` folder is up to date with all native modules)
+    ```bash
+    npx expo prebuild
+    ```
 
-```sh
-# Using npm
-npm start
+3.  **Open in Android Studio**
+    *   Open **Android Studio**.
+    *   Select "Open an Existing Project".
+    *   Navigate to `PokeExplorerExpo/android`.
+    *   Click **Run** (Green Play Button) to build and launch the app on your emulator or device.
 
-# OR using Yarn
-yarn start
-```
+4.  **Alternative: Command Line**
+    ```bash
+    npm start
+    # Press 'a' to build and run on Android
+    ```
 
-## Step 2: Run with Expo
+---
 
-This project uses **Expo**. You do not need to install Android Studio or Xcode just to run the app on your physical device.
-
-### 1. Start the Development Server
-Run the following command in the terminal:
-```bash
-npx expo start
-```
-This will launch the Metro Bundler UI.
-
-### 2. Run on Device
-*   **Android**: Install **Expo Go** from the Play Store. Scan the QR code.
-*   **iOS**: Install **Expo Go** from the App Store. Open your Camera app and scan the QR code.
-    *   *Note*: On iOS, you may need to use `--tunnel` if you are on a different Wi-Fi network: `npx expo start --tunnel`.
-
-### 3. Run on Simulator/Emulator
-*   Press `a` in the terminal to open on Android Emulator.
-*   Press `i` to open on iOS Simulator (requires macOS + Xcode).
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+*Gotta Catch 'Em All!* 🧢
