@@ -26,12 +26,21 @@ const CatchScreen = ({ route, navigation }: any) => {
     const { markCaught, isCaught } = usePokemon();
     const { user, userData, checkQuestProgress } = useUser();
 
-    // Refs
-    const viewShotRef = useRef<ViewShot>(null);
+
+
+    // Voice State
+    const [isListening, setIsListening] = useState(false);
+    const [voiceTranscript, setVoiceTranscript] = useState('');
 
     // Animation Values
     const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+
     const breath = useRef(new Animated.Value(0)).current;
+
+    // Camera Ref & Snapshot State
+    const cameraRef = useRef<CameraView>(null);
+    const [tempImage, setTempImage] = useState<string | null>(null);
+    const viewShotRef = useRef<ViewShot>(null);
 
     useEffect(() => {
         if (permission && !permission.granted) {
@@ -107,6 +116,39 @@ const CatchScreen = ({ route, navigation }: any) => {
         ).start();
     }, []);
 
+    // Speech Recognition Event Handlers
+    useSpeechRecognitionEvent("result", (event) => {
+        const transcription = event.results[0]?.transcript.toLowerCase();
+        if (transcription) {
+            setVoiceTranscript(transcription);
+            // Check if "gotcha" or similar is in the transcription
+            if (
+                transcription.includes("gotcha") ||
+                transcription.includes("got you") ||
+                transcription.includes("got cha") ||
+                transcription.includes("catch") ||
+                transcription.includes("capture") ||
+                transcription.includes("gacha")
+            ) {
+                console.log("Voice Command Triggered Catch!");
+                setIsListening(false);
+                ExpoSpeechRecognitionModule.stop();
+                handleCatch();
+            }
+        }
+    });
+
+    useSpeechRecognitionEvent("end", () => {
+        setIsListening(false);
+        setVoiceTranscript('');
+    });
+
+    useSpeechRecognitionEvent("error", (event) => {
+        console.log("Speech Recognition Error:", event.error);
+        setIsListening(false);
+        setVoiceTranscript('');
+    });
+
     if (!permission) {
         return <View style={styles.container}><Text>Requesting permission...</Text></View>;
     }
@@ -173,21 +215,39 @@ const CatchScreen = ({ route, navigation }: any) => {
 
     const handleSnapshot = async () => {
         try {
-            if (viewShotRef.current) {
-                // @ts-ignore
-                const uri = await captureRef(viewShotRef, {
-                    format: 'jpg',
-                    quality: 0.9,
-                    result: 'tmpfile'
-                });
+            if (cameraRef.current) {
+                // 1. Take raw photo from camera
+                const photo = await cameraRef.current.takePictureAsync({ skipProcessing: true });
+                if (photo?.uri) {
+                    // 2. Display as static background (Freeze frame)
+                    setTempImage(photo.uri);
 
-                if (mediaPermission?.granted) {
-                    await MediaLibrary.saveToLibraryAsync(uri);
-                    Alert.alert("Snap!", "Photo saved to your gallery! 📸");
-                    Tts.speak("Nice shot!");
-                } else {
-                    Alert.alert("Permission", "Need gallery permission to save photo.");
-                    requestMediaPermission();
+                    // 3. Wait for render (short delay)
+                    setTimeout(async () => {
+                        try {
+                            // 4. Capture the view (now containing the static image + AR overlay)
+                            const uri = await captureRef(viewShotRef, {
+                                format: 'jpg',
+                                quality: 0.9,
+                                result: 'tmpfile'
+                            });
+
+                            // 5. Cleanup
+                            setTempImage(null);
+
+                            if (mediaPermission?.granted) {
+                                await MediaLibrary.saveToLibraryAsync(uri);
+                                Alert.alert("Snap!", "Photo saved to your gallery! 📸");
+                                Tts.speak("Nice shot!");
+                            } else {
+                                Alert.alert("Permission", "Need gallery permission to save photo.");
+                                requestMediaPermission();
+                            }
+                        } catch (innerError) {
+                            console.log("Inner snapshot error", innerError);
+                            setTempImage(null);
+                        }
+                    }, 500); // 500ms delay to ensure image renders
                 }
             }
         } catch (e) {
@@ -199,50 +259,122 @@ const CatchScreen = ({ route, navigation }: any) => {
     const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonId}.png`;
 
     return (
-        // Wrap everything in ViewShot to capture the AR view
         <ViewShot ref={viewShotRef} style={{ flex: 1 }} options={{ format: 'jpg', quality: 0.9 }}>
             <View style={styles.container}>
-                <CameraView style={styles.camera} facing="back">
-                    {/* Overlay UI */}
-                    <View style={styles.overlay}>
-                        <View style={styles.header}>
-                            <Text style={styles.title}>Wild {pokemonName} Appeared!</Text>
-                        </View>
+                {/* Temp Background Image for Snapshotting */}
+                {tempImage ? (
+                    <Image source={{ uri: tempImage }} style={StyleSheet.absoluteFill} />
+                ) : (
+                    <CameraView ref={cameraRef} style={styles.camera} facing="back">
+                        {/* This empty view is just to keep the structure valid if needed, 
+                             actually CameraView children are overlays. 
+                             We need to duplicate the overlay OUTSIDE if using tempImage? 
+                             No, we can just overlay the UI on top. 
+                         */}
+                    </CameraView>
+                )}
 
-                        {/* The Pokemon with AR Effects */}
-                        <View style={styles.centerContainer}>
-                            {!caught && (
-                                <Animated.Image
-                                    source={{ uri: imageUrl }}
-                                    style={[
-                                        styles.pokemonImage,
-                                        {
-                                            transform: [
-                                                { translateX: position.x },
-                                                { translateY: Animated.add(position.y, breath) } // Combine parallax + breathing
-                                            ]
-                                        }
-                                    ]}
-                                />
-                            )}
-                        </View>
+                {/* Overlay UI - Positioned absolutely to cover Camera or TempImage */}
+                <View style={styles.overlay}>
+                    <View style={styles.header}>
+                        <Text style={styles.title}>Wild {pokemonName} Appeared!</Text>
+                    </View>
 
-                        {/* Controls */}
-                        <View style={styles.bottomBar}>
+                    {/* The Pokemon with AR Effects */}
+                    <View style={styles.centerContainer}>
+                        {!caught && (
+                            <Animated.Image
+                                source={{ uri: imageUrl }}
+                                style={[
+                                    styles.pokemonImage,
+                                    {
+                                        transform: [
+                                            { translateX: position.x },
+                                            { translateY: Animated.add(position.y, breath) } // Combine parallax + breathing
+                                        ]
+                                    }
+                                ]}
+                            />
+                        )}
+                    </View>
+
+                    {/* Controls */}
+                    <View style={styles.bottomBar}>
+                        <View style={styles.controlsRow}>
+                            {/* Camera Snap Button (Left) */}
+                            <TouchableOpacity style={styles.sideBtn} onPress={handleSnapshot}>
+                                <MaterialIcons name="camera-alt" size={32} color="white" />
+                            </TouchableOpacity>
+
+                            {/* Center Catch Button */}
                             <TouchableOpacity style={styles.catchBtn} onPress={handleCatch}>
                                 <View style={styles.outerRing}>
                                     <View style={styles.innerRing} />
                                 </View>
                             </TouchableOpacity>
-                            <Text style={styles.instruction}>Tap to Catch!</Text>
-                        </View>
-                    </View>
-                </CameraView>
 
-                {/* Snap Button (Top Right) */}
-                <TouchableOpacity style={styles.snapBtn} onPress={handleSnapshot}>
-                    <MaterialIcons name="camera-alt" size={30} color="white" />
-                </TouchableOpacity>
+                            {/* Voice Button (Right) */}
+                            <TouchableOpacity
+                                style={[styles.sideBtn, styles.voiceBtnStyle, isListening && styles.voiceBtnActive]}
+                                onPressIn={async () => {
+                                    setVoiceTranscript('');
+                                    setIsListening(true);
+                                    try {
+                                        const { status } = await Audio.requestPermissionsAsync();
+                                        if (status !== 'granted') {
+                                            setIsListening(false);
+                                            Alert.alert("Permission", "Mic permission required.");
+                                            return;
+                                        }
+
+                                        const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+                                        if (!result.granted) {
+                                            setIsListening(false);
+                                            Alert.alert("Permission", "Speech recognition permission required.");
+                                            return;
+                                        }
+
+                                        await ExpoSpeechRecognitionModule.start({
+                                            lang: "en-US",
+                                            interimResults: true,
+                                            maxAlternatives: 1,
+                                            continuous: false,
+                                            androidIntentOptions: {
+                                                EXTRA_LANGUAGE_MODEL: "free_form",
+                                            },
+                                        });
+                                    } catch (e) {
+                                        console.log("Speech recognition start error", e);
+                                        setIsListening(false);
+                                    }
+                                }}
+                                onPressOut={() => {
+                                    setIsListening(false);
+                                    ExpoSpeechRecognitionModule.stop();
+                                }}
+                            >
+                                <MaterialIcons
+                                    name={isListening ? "mic" : "mic-none"}
+                                    size={32}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={styles.instruction}>
+                            {isListening ? 'Say "Gotcha!"' : 'Tap to Catch!'}
+                        </Text>
+                    </View>
+                </View>
+
+
+
+                {/* Show transcription if listening */}
+                {isListening && voiceTranscript && (
+                    <View style={styles.transcriptBox}>
+                        <Text style={styles.transcriptText}>{voiceTranscript}</Text>
+                    </View>
+                )}
 
                 {/* Back Button */}
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
@@ -257,7 +389,18 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: 'black' },
     camera: { flex: 1 },
     text: { color: 'white', fontSize: 18, textAlign: 'center', marginTop: 50 },
-    overlay: { flex: 1, justifyContent: 'space-between', alignItems: 'center', paddingVertical: 40 },
+    controlsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 10
+    },
+    overlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 40
+    },
     header: {
         backgroundColor: 'rgba(0,0,0,0.5)',
         padding: 10,
@@ -269,7 +412,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         flex: 1,
-        // Allow pokemon to move outside its box slightly
         overflow: 'visible'
     },
     pokemonImage: {
@@ -278,7 +420,9 @@ const styles = StyleSheet.create({
         resizeMode: 'contain',
     },
     bottomBar: { alignItems: 'center', marginBottom: 20 },
-    catchBtn: { marginBottom: 10 },
+    catchBtn: {
+        marginHorizontal: 15,
+    },
     outerRing: {
         width: 80, height: 80, borderRadius: 40,
         borderWidth: 5, borderColor: 'white',
@@ -290,8 +434,18 @@ const styles = StyleSheet.create({
         borderWidth: 2, borderColor: 'white'
     },
     instruction: { color: 'white', fontSize: 16, fontWeight: 'bold', textShadowColor: 'black', textShadowRadius: 5 },
-    btn: { backgroundColor: '#ff5722', padding: 15, borderRadius: 10, marginTop: 20, marginHorizontal: 20 },
-    btnText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
+    sideBtn: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.3)',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+    },
     backBtn: {
         position: 'absolute',
         top: 50,
@@ -299,15 +453,31 @@ const styles = StyleSheet.create({
         padding: 10,
         zIndex: 10
     },
-    snapBtn: {
+    voiceBtnStyle: {
+        backgroundColor: '#d50000',
+    },
+    voiceBtnActive: {
+        backgroundColor: '#ff9100',
+        transform: [{ scale: 1.1 }],
+    },
+    transcriptBox: {
         position: 'absolute',
-        top: 50,
-        right: 20,
+        bottom: 150,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(0,0,0,0.8)',
         padding: 10,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        borderRadius: 25,
-        zIndex: 10
-    }
+        borderRadius: 10,
+        minWidth: 150,
+        zIndex: 20
+    },
+    transcriptText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    btn: { backgroundColor: '#ff5722', padding: 15, borderRadius: 10, marginTop: 20, marginHorizontal: 20 },
+    btnText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
 });
 
 export default CatchScreen;

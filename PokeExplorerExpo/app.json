@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "PokeExplorerExpo",
-    "slug": "PokeExplorerExpo",
+    "name": "TrainerLink",
+    "slug": "TrainerLink",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/Pokeball.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
