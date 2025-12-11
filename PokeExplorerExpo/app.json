@@ -23,6 +23,7 @@
     },
     "android": {
       "package": "com.kkyuuki.pokeexplorer",
+      "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyC-Gonedyu2XL_U9b7NMS2cwEEXH2gf1Io"

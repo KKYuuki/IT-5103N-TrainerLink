@@ -21,11 +21,14 @@ const SignupScreen = ({ navigation }: any) => {
         try {
             // Check if username unique
             const q = query(collection(db, "users"), where("username", "==", username));
-            const querySnapshot = await getDocs(q);
+            // Add timeout to fetch to prevent infinite hang
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout")), 10000));
+
+            const querySnapshot = await Promise.race([getDocs(q), timeoutPromise]) as any;
 
             if (!querySnapshot.empty) {
-                Alert.alert("Error", "Username already taken.");
                 setLoading(false);
+                setTimeout(() => Alert.alert("Error", "Username already taken."), 100);
                 return;
             }
 
@@ -46,8 +49,24 @@ const SignupScreen = ({ navigation }: any) => {
 
             // Auth listener in App.tsx will redirect to Map
         } catch (error: any) {
-            Alert.alert('Signup Error', error.message);
+            console.log("Signup Error", error);
             setLoading(false);
+
+            let title = 'Signup Error';
+            let msg = error.message;
+
+            if (error.code === 'auth/email-already-in-use') {
+                title = 'Account Exists';
+                msg = 'This email is already registered.';
+                setTimeout(() => {
+                    Alert.alert(title, msg, [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Go to Login', onPress: () => navigation.navigate('Login') }
+                    ]);
+                }, 100);
+            } else {
+                setTimeout(() => Alert.alert(title, msg), 100);
+            }
         }
     };
 

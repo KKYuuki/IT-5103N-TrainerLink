@@ -313,8 +313,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             setLoading(false);
+            setLoading(false);
         });
-        return unsubscribe;
+
+        // Safety timeout: If auth takes too long (e.g. 5s), force load to finish
+        const safetyTimeout = setTimeout(() => {
+            setLoading((prev) => {
+                if (prev) {
+                    console.warn("Auth timed out, forcing app load");
+                    return false;
+                }
+                return prev;
+            });
+        }, 5000);
+
+        return () => {
+            unsubscribe();
+            clearTimeout(safetyTimeout);
+        };
     }, []);
 
     return (

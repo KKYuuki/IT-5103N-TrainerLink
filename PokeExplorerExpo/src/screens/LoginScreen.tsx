@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, ActivityIndicator, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebaseConfig';
 
 const LoginScreen = ({ navigation }: any) => {
@@ -33,7 +33,22 @@ const LoginScreen = ({ navigation }: any) => {
             }
 
             // Sign in using the resolved email
-            await signInWithEmailAndPassword(auth, emailToUse, password);
+            const userCredential = await signInWithEmailAndPassword(auth, emailToUse, password);
+            const user = userCredential.user;
+
+            const userDocRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userDocRef);
+
+            if (!userSnap.exists()) {
+                console.log("Repairing missing user doc for", user.email);
+                await setDoc(userDocRef, {
+                    uid: user.uid,
+                    email: user.email,
+                    username: user.email?.split('@')[0] || 'Trainer',
+                    createdAt: new Date(),
+                    repairedAt: new Date()
+                });
+            }
         } catch (error: any) {
             Alert.alert('Login Error', error.message);
             setLoading(false);
@@ -54,10 +69,6 @@ const LoginScreen = ({ navigation }: any) => {
         >
             {/* Top Branding */}
             <View style={styles.header}>
-                {/* 
-                   REPLACE source below with: require('../../assets/pokeball-login-signup.png') 
-                   Using default icon as placeholder to prevent crash.
-                */}
                 <Image
                     source={require('../../assets/pokeball-login-signup.png')}
                     style={styles.logo}

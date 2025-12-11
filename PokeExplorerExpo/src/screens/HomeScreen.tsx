@@ -13,6 +13,30 @@ const HomeScreen = ({ navigation }: any) => {
     const { user, dailyQuests, completeQuest } = useUser();
     const { caughtPokemon } = usePokemon();
 
+    const [resetTime, setResetTime] = React.useState('');
+
+    React.useEffect(() => {
+        const updateTimer = () => {
+            const now = new Date();
+            // Create date for PST (UTC-8)
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const pstNow = new Date(utc + (3600000 * -8));
+
+            const midnight = new Date(pstNow);
+            midnight.setHours(24, 0, 0, 0);
+
+            const diff = midnight.getTime() - pstNow.getTime();
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+            setResetTime(`${hours}h ${minutes}m`);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 60000); // Update every minute
+        return () => clearInterval(interval);
+    }, []);
+
     const features = [
         { icon: 'map', title: 'Explore', subtitle: 'Find Pokemon nearby', screen: 'MapTab', color: '#d50000' },
         { icon: 'catching-pokemon', title: 'Pokedex', subtitle: `${caughtPokemon.length}/151 caught`, screen: 'PokedexTab', color: '#ff5722' },
@@ -37,7 +61,7 @@ const HomeScreen = ({ navigation }: any) => {
                 {/* Daily Quests Card */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Daily Research</Text>
-                    <Text style={styles.sectionSubtitle}>Resets in 12h</Text>
+                    <Text style={styles.sectionSubtitle}>Resets in {resetTime}</Text>
                 </View>
 
                 {dailyQuests.map((quest) => (

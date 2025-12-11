@@ -10,6 +10,9 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { UserProvider, useUser } from './src/context/UserContext';
 import { PokemonProvider } from './src/context/PokemonContext';
 
+// Components
+import ErrorBoundary from './src/components/ErrorBoundary';
+
 // Screens
 import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -119,10 +122,21 @@ const AppNavigator = () => {
     return () => { if (currentSound) currentSound.unloadAsync(); };
   }, [user, loading]);
 
-  if (loading || !fontsLoaded) {
+  // Safety: Force app to load after 3s even if fonts/auth hang
+  const [isReady, setIsReady] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if ((loading || !fontsLoaded) && !isReady) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#ff5722" />
+        <Text style={{ marginTop: 10 }}>Loading TrainerLink...</Text>
       </View>
     );
   }
@@ -157,11 +171,13 @@ const AppNavigator = () => {
 const App = () => {
   return (
     <SafeAreaProvider>
-      <UserProvider>
-        <PokemonProvider>
-          <AppNavigator />
-        </PokemonProvider>
-      </UserProvider>
+      <ErrorBoundary>
+        <UserProvider>
+          <PokemonProvider>
+            <AppNavigator />
+          </PokemonProvider>
+        </UserProvider>
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 };
