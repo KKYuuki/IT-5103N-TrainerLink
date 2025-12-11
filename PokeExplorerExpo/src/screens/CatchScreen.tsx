@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, Animated, Dimensions, Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Gyroscope } from 'expo-sensors';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,15 +7,27 @@ import { usePokemon } from '../context/PokemonContext';
 import { useUser } from '../context/UserContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
+import Tts from 'react-native-tts';
+import ViewShot, { captureRef } from 'react-native-view-shot';
+import * as MediaLibrary from 'expo-media-library';
+import {
+    useSpeechRecognitionEvent,
+    ExpoSpeechRecognitionModule,
+} from "expo-speech-recognition";
+import { Audio } from 'expo-av';
 
 const { width, height } = Dimensions.get('window');
 
 const CatchScreen = ({ route, navigation }: any) => {
     const { pokemonId, pokemonName } = route.params;
     const [permission, requestPermission] = useCameraPermissions();
+    const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
     const [caught, setCaught] = useState(false);
     const { markCaught, isCaught } = usePokemon();
     const { user, userData, checkQuestProgress } = useUser();
+
+    // Refs
+    const viewShotRef = useRef<ViewShot>(null);
 
     // Animation Values
     const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -25,7 +37,10 @@ const CatchScreen = ({ route, navigation }: any) => {
         if (permission && !permission.granted) {
             requestPermission();
         }
-    }, [permission]);
+        if (mediaPermission && !mediaPermission.granted) {
+            requestMediaPermission();
+        }
+    }, [permission, mediaPermission]);
 
     // Gyroscope Effect (Parallax)
     useEffect(() => {
@@ -114,6 +129,9 @@ const CatchScreen = ({ route, navigation }: any) => {
         setCaught(true);
         markCaught(pokemonId); // Save to persistence
 
+        // GOTCHA Voice Effect
+        Tts.speak(`Gotcha! You caught ${pokemonName || 'it'}!`);
+
         // Check Daily Quests (Fetch types first)
         try {
             const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`);
@@ -153,52 +171,85 @@ const CatchScreen = ({ route, navigation }: any) => {
         );
     };
 
+    const handleSnapshot = async () => {
+        try {
+            if (viewShotRef.current) {
+                // @ts-ignore
+                const uri = await captureRef(viewShotRef, {
+                    format: 'jpg',
+                    quality: 0.9,
+                    result: 'tmpfile'
+                });
+
+                if (mediaPermission?.granted) {
+                    await MediaLibrary.saveToLibraryAsync(uri);
+                    Alert.alert("Snap!", "Photo saved to your gallery! 📸");
+                    Tts.speak("Nice shot!");
+                } else {
+                    Alert.alert("Permission", "Need gallery permission to save photo.");
+                    requestMediaPermission();
+                }
+            }
+        } catch (e) {
+            console.log("Snapshot failed", e);
+            Alert.alert("Error", "Could not take snapshot.");
+        }
+    };
+
     const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonId}.png`;
 
     return (
-        <View style={styles.container}>
-            <CameraView style={styles.camera} facing="back">
-                {/* Overlay UI */}
-                <View style={styles.overlay}>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>Wild {pokemonName} Appeared!</Text>
-                    </View>
+        // Wrap everything in ViewShot to capture the AR view
+        <ViewShot ref={viewShotRef} style={{ flex: 1 }} options={{ format: 'jpg', quality: 0.9 }}>
+            <View style={styles.container}>
+                <CameraView style={styles.camera} facing="back">
+                    {/* Overlay UI */}
+                    <View style={styles.overlay}>
+                        <View style={styles.header}>
+                            <Text style={styles.title}>Wild {pokemonName} Appeared!</Text>
+                        </View>
 
-                    {/* The Pokemon with AR Effects */}
-                    <View style={styles.centerContainer}>
-                        {!caught && (
-                            <Animated.Image
-                                source={{ uri: imageUrl }}
-                                style={[
-                                    styles.pokemonImage,
-                                    {
-                                        transform: [
-                                            { translateX: position.x },
-                                            { translateY: Animated.add(position.y, breath) } // Combine parallax + breathing
-                                        ]
-                                    }
-                                ]}
-                            />
-                        )}
-                    </View>
+                        {/* The Pokemon with AR Effects */}
+                        <View style={styles.centerContainer}>
+                            {!caught && (
+                                <Animated.Image
+                                    source={{ uri: imageUrl }}
+                                    style={[
+                                        styles.pokemonImage,
+                                        {
+                                            transform: [
+                                                { translateX: position.x },
+                                                { translateY: Animated.add(position.y, breath) } // Combine parallax + breathing
+                                            ]
+                                        }
+                                    ]}
+                                />
+                            )}
+                        </View>
 
-                    {/* Controls */}
-                    <View style={styles.bottomBar}>
-                        <TouchableOpacity style={styles.catchBtn} onPress={handleCatch}>
-                            <View style={styles.outerRing}>
-                                <View style={styles.innerRing} />
-                            </View>
-                        </TouchableOpacity>
-                        <Text style={styles.instruction}>Tap to Catch!</Text>
+                        {/* Controls */}
+                        <View style={styles.bottomBar}>
+                            <TouchableOpacity style={styles.catchBtn} onPress={handleCatch}>
+                                <View style={styles.outerRing}>
+                                    <View style={styles.innerRing} />
+                                </View>
+                            </TouchableOpacity>
+                            <Text style={styles.instruction}>Tap to Catch!</Text>
+                        </View>
                     </View>
-                </View>
-            </CameraView>
+                </CameraView>
 
-            {/* Back Button */}
-            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                <MaterialIcons name="close" size={30} color="white" />
-            </TouchableOpacity>
-        </View>
+                {/* Snap Button (Top Right) */}
+                <TouchableOpacity style={styles.snapBtn} onPress={handleSnapshot}>
+                    <MaterialIcons name="camera-alt" size={30} color="white" />
+                </TouchableOpacity>
+
+                {/* Back Button */}
+                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+                    <MaterialIcons name="close" size={30} color="white" />
+                </TouchableOpacity>
+            </View>
+        </ViewShot>
     );
 };
 
@@ -246,6 +297,16 @@ const styles = StyleSheet.create({
         top: 50,
         left: 20,
         padding: 10,
+        zIndex: 10
+    },
+    snapBtn: {
+        position: 'absolute',
+        top: 50,
+        right: 20,
+        padding: 10,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 25,
+        zIndex: 10
     }
 });
 

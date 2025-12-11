@@ -11,7 +11,10 @@ import { checkGridForSpawns, SpawnLocation } from '../utils/spawning';
 import { getBiomeAtLocation, isRarePokemon, isLegendaryPokemon } from '../utils/procedural';
 import { pokemonNames } from '../utils/pokemonNames';
 import PokemonMarker from '../components/PokemonMarker';
-import Voice, { SpeechResultsEvent } from '@react-native-voice/voice';
+import {
+    useSpeechRecognitionEvent,
+    ExpoSpeechRecognitionModule,
+} from "expo-speech-recognition";
 import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 
@@ -115,41 +118,25 @@ const HuntScreen = ({ navigation }: any) => {
         return () => { if (locationSubscription) locationSubscription.remove(); };
     }, []);
 
-    // Voice Setup
-    useEffect(() => {
-        const onSpeechResults = (e: SpeechResultsEvent) => {
-            if (e.value && e.value.length > 0) {
-                // Final result (update input one last time)
-                setManualInput(e.value[0]);
-                setIsListening(false);
-            }
-        };
+    // Speech Recognition Event Handlers
+    useSpeechRecognitionEvent("result", (event) => {
+        const transcription = event.results[0]?.transcript;
+        if (transcription) {
+            setManualInput(transcription);
+        }
+    });
 
-        const onSpeechPartialResults = (e: SpeechResultsEvent) => {
-            if (e.value && e.value.length > 0) {
-                // Live transcription
-                setManualInput(e.value[0]);
-            }
-        };
+    useSpeechRecognitionEvent("end", () => {
+        setIsListening(false);
+    });
 
-        const onSpeechError = (e: any) => {
-            console.log("Speech Error:", e);
-            setIsListening(false);
-            // Don't alert "No Match" (7) aggressively, just let user type
-            if (e.error?.code !== '7') {
-                // only show alert for weird errors
-                // Alert.alert("Voice Debug", `Code: ${e.error?.code}`);
-            }
-        };
-
-        Voice.onSpeechResults = onSpeechResults;
-        Voice.onSpeechPartialResults = onSpeechPartialResults;
-        Voice.onSpeechError = onSpeechError;
-
-        return () => {
-            Voice.destroy().then(Voice.removeAllListeners);
-        };
-    }, []);
+    useSpeechRecognitionEvent("error", (event) => {
+        console.log("Speech Recognition Error:", event.error);
+        setIsListening(false);
+        if (event.error !== "no-speech" && event.error !== "no-match") {
+            // Only alert for unexpected errors
+        }
+    });
 
     // Multiplayer Listener
     useEffect(() => {
@@ -207,13 +194,28 @@ const HuntScreen = ({ navigation }: any) => {
                 return;
             }
 
-            // 3. Start Listening
-            await Voice.stop(); // Clear any previous session
-            await Voice.start('en-US');
+            // 3. Start Recording and Recognition
+            const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+            if (!result.granted) {
+                setIsListening(false);
+                Alert.alert("Permission", "Speech recognition permission required.");
+                return;
+            }
+
+            await ExpoSpeechRecognitionModule.start({
+                lang: "en-US",
+                interimResults: true,
+                maxAlternatives: 1,
+                continuous: false,
+                androidIntentOptions: {
+                    EXTRA_LANGUAGE_MODEL: "free_form",
+                },
+            });
 
         } catch (e) {
-            console.log("Voice start error", e);
+            console.log("Speech recognition start error", e);
             setIsListening(false);
+            Alert.alert("Error", "Could not start speech recognition. Please type instead.");
         }
     };
 
@@ -391,18 +393,18 @@ const HuntScreen = ({ navigation }: any) => {
 
                         <TextInput
                             style={styles.modalInput}
-                            placeholder="Listening..."
+                            placeholder="Recording... or type Pokemon name"
                             placeholderTextColor="#ccc"
                             value={manualInput}
                             onChangeText={setManualInput}
-                            autoFocus // Keep keyboard up so they can type immediately if voice fails
+                            autoFocus
                         />
 
                         <View style={styles.modalButtons}>
                             <TouchableOpacity
                                 onPress={() => {
                                     setIsListening(false);
-                                    Voice.stop();
+                                    ExpoSpeechRecognitionModule.stop();
                                     setShowInputModal(false);
                                 }}
                                 style={styles.modalBtnCancel}
@@ -413,7 +415,7 @@ const HuntScreen = ({ navigation }: any) => {
                             <TouchableOpacity
                                 onPress={() => {
                                     setIsListening(false);
-                                    Voice.stop();
+                                    ExpoSpeechRecognitionModule.stop();
                                     setShowInputModal(false);
                                     processShout(manualInput);
                                     setManualInput('');

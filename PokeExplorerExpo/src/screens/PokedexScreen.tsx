@@ -18,7 +18,10 @@ import { getPokemonList, getPokemonDetails, PokemonListResult } from '../service
 import { auth } from '../services/firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { MaterialIcons } from '@expo/vector-icons';
-import Voice, { SpeechResultsEvent } from '@react-native-voice/voice';
+import {
+    useSpeechRecognitionEvent,
+    ExpoSpeechRecognitionModule,
+} from "expo-speech-recognition";
 import { Audio } from 'expo-av';
 
 const PokedexScreen = ({ navigation }: any) => {
@@ -81,36 +84,27 @@ const PokedexScreen = ({ navigation }: any) => {
         fetchPokemon();
     }, []);
 
-    // Voice Setup
-    useEffect(() => {
-        const onSpeechResults = (e: SpeechResultsEvent) => {
-            if (e.value && e.value.length > 0) {
-                setVoiceInput(e.value[0]);
-                // Auto-submit if silence/final
-                setIsListening(false);
-                processVoiceCommand(e.value[0]);
-            }
-        };
-
-        const onSpeechPartialResults = (e: SpeechResultsEvent) => {
-            if (e.value && e.value.length > 0) {
-                setVoiceInput(e.value[0]);
-            }
-        };
-
-        const onSpeechError = (e: any) => {
-            console.log("Speech Error:", e);
+    // Speech Recognition Event Handlers
+    useSpeechRecognitionEvent("result", (event) => {
+        const transcription = event.results[0]?.transcript;
+        if (transcription) {
+            setVoiceInput(transcription);
             setIsListening(false);
-        };
+            processVoiceCommand(transcription);
+        }
+    });
 
-        Voice.onSpeechResults = onSpeechResults;
-        Voice.onSpeechPartialResults = onSpeechPartialResults;
-        Voice.onSpeechError = onSpeechError;
+    useSpeechRecognitionEvent("end", () => {
+        setIsListening(false);
+    });
 
-        return () => {
-            Voice.destroy().then(Voice.removeAllListeners);
-        };
-    }, []);
+    useSpeechRecognitionEvent("error", (event) => {
+        console.log("Speech Recognition Error:", event.error);
+        setIsListening(false);
+        if (event.error !== "no-speech" && event.error !== "no-match") {
+            Alert.alert("Voice Error", "Please try again.");
+        }
+    });
 
     const processVoiceCommand = async (text: string) => {
         const cleanText = text.trim().toLowerCase();
@@ -146,11 +140,28 @@ const PokedexScreen = ({ navigation }: any) => {
                 Alert.alert("Permission", "Mic permission required for voice.");
                 return;
             }
-            await Voice.stop();
-            await Voice.start('en-US');
+
+            const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+            if (!result.granted) {
+                setIsListening(false);
+                Alert.alert("Permission", "Speech recognition permission required.");
+                return;
+            }
+
+            await ExpoSpeechRecognitionModule.start({
+                lang: "en-US",
+                interimResults: true,
+                maxAlternatives: 1,
+                continuous: false,
+                androidIntentOptions: {
+                    EXTRA_LANGUAGE_MODEL: "free_form",
+                },
+            });
+
         } catch (e) {
-            console.log("Voice start error", e);
+            console.log("Speech recognition start error", e);
             setIsListening(false);
+            Alert.alert("Error", "Could not start speech recognition. Please type instead.");
         }
     };
 
@@ -280,7 +291,7 @@ const PokedexScreen = ({ navigation }: any) => {
                         <TouchableOpacity
                             onPress={() => {
                                 setIsListening(false);
-                                Voice.stop();
+                                ExpoSpeechRecognitionModule.stop();
                                 setShowInputModal(false);
                             }}
                             style={styles.modalBtnCancel}
@@ -323,18 +334,41 @@ const PokedexScreen = ({ navigation }: any) => {
                             <Text style={styles.modalSubtitle}>Try saying "Pikachu"</Text>
                         )}
 
-                        <Text style={styles.voiceText}>{voiceInput || "..."}</Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            placeholder="Recording... or type Pokemon name"
+                            placeholderTextColor="#ccc"
+                            value={voiceInput}
+                            onChangeText={setVoiceInput}
+                            autoFocus
+                        />
 
-                        <TouchableOpacity
-                            onPress={() => {
-                                setIsListening(false);
-                                Voice.stop();
-                                setShowInputModal(false);
-                            }}
-                            style={styles.modalBtnCancel}
-                        >
-                            <Text style={{ color: '#666' }}>Cancel</Text>
-                        </TouchableOpacity>
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setIsListening(false);
+                                    ExpoSpeechRecognitionModule.stop();
+                                    setShowInputModal(false);
+                                }}
+                                style={styles.modalBtnCancel}
+                            >
+                                <Text style={{ color: '#666' }}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setIsListening(false);
+                                    ExpoSpeechRecognitionModule.stop();
+                                    setShowInputModal(false);
+                                    if (voiceInput.trim()) {
+                                        processVoiceCommand(voiceInput);
+                                    }
+                                }}
+                                style={styles.modalBtnSubmit}
+                            >
+                                <Text style={styles.modalBtnText}>FIND!</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -494,7 +528,15 @@ const styles = StyleSheet.create({
     modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#d50000', marginBottom: 10 },
     modalSubtitle: { fontSize: 14, color: '#666', marginBottom: 20 },
     voiceText: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 30, textAlign: 'center' },
-    modalBtnCancel: { padding: 10 },
+    modalInput: {
+        width: '100%', borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 10, fontSize: 18, marginBottom: 20, color: 'black'
+    },
+    modalButtons: { flexDirection: 'row', width: '100%', justifyContent: 'space-between' },
+    modalBtnCancel: { padding: 10, flex: 1, alignItems: 'center' },
+    modalBtnSubmit: {
+        padding: 10, backgroundColor: '#d50000', borderRadius: 10, flex: 1, alignItems: 'center', marginLeft: 10
+    },
+    modalBtnText: { color: 'white', fontWeight: 'bold' },
 });
 
 export default PokedexScreen;
