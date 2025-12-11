@@ -73,8 +73,8 @@ interface UserContextType {
     badges: Badge[];
     completeQuest: (questId: string, questObj?: Quest) => Promise<void>;
     checkQuestProgress: (action: 'CATCH' | 'WALK' | 'COMMUNITY', payload?: any) => void;
+    updateUserLocation: (lat: number, lng: number) => Promise<void>;
 }
-
 
 // Define ALL Possible badges here, but don't load them into state by default
 const ALL_BADGES_METADATA: Record<string, Omit<Badge, 'id' | 'earnedAt'>> = {
@@ -91,7 +91,8 @@ const ALL_BADGES_METADATA: Record<string, Omit<Badge, 'id' | 'earnedAt'>> = {
 
 const UserContext = createContext<UserContextType>({
     user: null, userData: null, loading: true,
-    dailyQuests: [], badges: [], completeQuest: async () => { }, checkQuestProgress: () => { }
+    dailyQuests: [], badges: [], completeQuest: async () => { }, checkQuestProgress: () => { },
+    updateUserLocation: async () => { }
 });
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -99,10 +100,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [userData, setUserData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
-    // Initialize empty first, effect will load them
-    // Initialize empty first, effect will load them
     const [dailyQuests, setDailyQuests] = useState<Quest[]>([]);
     const [badges, setBadges] = useState<Badge[]>([]);
+
+    // 4. Multiplayer Location Update
+    const updateUserLocation = async (lat: number, lng: number) => {
+        if (!user) return;
+        try {
+            await setDoc(doc(db, 'users', user.uid), {
+                location: {
+                    latitude: lat,
+                    longitude: lng,
+                    timestamp: Date.now()
+                }
+            }, { merge: true });
+        } catch (e) {
+            console.log("Loc update error", e);
+        }
+    };
 
     // Load Daily Quests (Persistence Logic)
     useEffect(() => {
@@ -303,7 +318,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     return (
-        <UserContext.Provider value={{ user, userData, loading, dailyQuests, badges, completeQuest, checkQuestProgress }}>
+        <UserContext.Provider value={{ user, userData, loading, dailyQuests, badges, completeQuest, checkQuestProgress, updateUserLocation }}>
             {children}
         </UserContext.Provider>
     );

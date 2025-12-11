@@ -12,6 +12,8 @@ import { getBiomeAtLocation, isRarePokemon, isLegendaryPokemon } from '../utils/
 import { pokemonNames } from '../utils/pokemonNames';
 import PokemonMarker from '../components/PokemonMarker';
 import Voice, { SpeechResultsEvent } from '@react-native-voice/voice';
+import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import { db } from '../services/firebaseConfig';
 
 // Haversine distance helper
 const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
@@ -29,7 +31,7 @@ const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => 
 };
 
 const HuntScreen = ({ navigation }: any) => {
-    const { user } = useUser();
+    const { user, updateUserLocation } = useUser();
     const mapRef = useRef<MapView>(null);
     const [realLocation, setRealLocation] = useState<Location.LocationObject | null>(null);
     const [offset, setOffset] = useState({ lat: 0, lng: 0 });
@@ -39,6 +41,9 @@ const HuntScreen = ({ navigation }: any) => {
     const [hasZoomed, setHasZoomed] = useState(false);
     const [currentBiome, setCurrentBiome] = useState<string>("Loading...");
     const [sortedSpawns, setSortedSpawns] = useState<{ name: string; dist: number; id: number }[]>([]);
+
+    // Multiplayer State
+    const [otherPlayers, setOtherPlayers] = useState<any[]>([]);
 
     // New State for Lure
     const [lureTarget, setLureTarget] = useState<{ id: number, name: string, expiresAt: number } | null>(null);
@@ -91,7 +96,17 @@ const HuntScreen = ({ navigation }: any) => {
 
             locationSubscription = await Location.watchPositionAsync(
                 { accuracy: Location.Accuracy.High, distanceInterval: 1 },
-                (newLocation) => setRealLocation(newLocation)
+                (newLocation) => {
+                    setRealLocation(newLocation);
+                    // Broadcast Location (every ~5-10s handled by throttling or simple logic here)
+                    if (user) {
+                        const now = Date.now();
+                        // Simple 5.5s throttle check
+                        if (now % 5500 < 1000) {
+                            updateUserLocation(newLocation.coords.latitude, newLocation.coords.longitude);
+                        }
+                    }
+                }
             );
 
             setOffset({ lat: 0, lng: 0 });
@@ -135,6 +150,33 @@ const HuntScreen = ({ navigation }: any) => {
             Voice.destroy().then(Voice.removeAllListeners);
         };
     }, []);
+
+    // Multiplayer Listener
+    useEffect(() => {
+        if (!user) return;
+
+        // Listen for players active in the last 5 minutes
+        // Note: Firestore query might need an index for 'location.timestamp'
+        const q = query(
+            collection(db, 'users'),
+            where('location.timestamp', '>', Date.now() - 5 * 60 * 1000)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const players: any[] = [];
+            snapshot.forEach(doc => {
+                if (doc.id !== user.uid) { // Don't show self
+                    players.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                }
+            });
+            setOtherPlayers(players);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
 
     const processShout = (text: string) => {
         const cleanText = text.trim().toLowerCase();
@@ -265,6 +307,27 @@ const HuntScreen = ({ navigation }: any) => {
                 <Marker coordinate={{ latitude: playerLat, longitude: playerLng }} title="You">
                     <View style={styles.playerMarker}><View style={styles.playerDot} /></View>
                 </Marker>
+
+                {/* Other Players */}
+                {otherPlayers.map((player) => (
+                    player.location ? (
+                        <Marker
+                            key={player.id}
+                            coordinate={{
+                                latitude: player.location.latitude,
+                                longitude: player.location.longitude
+                            }}
+                            title={player.username || "Trainer"}
+                        >
+                            <View style={styles.otherPlayerMarker}>
+                                <Image
+                                    source={require('../../assets/pokeball-login-signup.png')}
+                                    style={{ width: 25, height: 25 }}
+                                />
+                            </View>
+                        </Marker>
+                    ) : null
+                ))}
 
                 {spawns.map((spawn) => (
                     <PokemonMarker
@@ -404,6 +467,12 @@ const styles = StyleSheet.create({
     map: { ...StyleSheet.absoluteFillObject },
     playerMarker: { width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,255,0,0.3)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#00ff00' },
     playerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#00ff00' },
+    otherPlayerMarker: {
+        width: 30, height: 30, borderRadius: 15,
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        justifyContent: 'center', alignItems: 'center',
+        borderWidth: 2, borderColor: '#ff5722'
+    },
 
     // Biome UI
     biomeIndicator: {
