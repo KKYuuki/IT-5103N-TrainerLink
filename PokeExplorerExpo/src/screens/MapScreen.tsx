@@ -50,6 +50,7 @@ const MapScreen = ({ navigation }: any) => {
     const [isMapReady, setIsMapReady] = useState(false);
     const [hasZoomed, setHasZoomed] = useState(false);
     const [currentBiome, setCurrentBiome] = useState<string>("Loading...");
+    const [followUser, setFollowUser] = useState(true); // Default to following
 
     // Tracking last spawn location to trigger updates every X meters
     const lastSpawnLocation = useRef<{ lat: number, lng: number } | null>(null);
@@ -183,18 +184,20 @@ const MapScreen = ({ navigation }: any) => {
         }
     }, [realLocation, offset]);
 
-    // Effect to handle initial zoom
+    // Effect to handle initial zoom and FOLLOW MODE
     useEffect(() => {
-        if (realLocation && isMapReady && !hasZoomed && mapRef.current) {
+        if (realLocation && isMapReady && mapRef.current && followUser) {
+            // If just starting (not zoomed) or following enabled
             mapRef.current.animateToRegion({
-                latitude: realLocation.coords.latitude,
-                longitude: realLocation.coords.longitude,
+                latitude: realLocation.coords.latitude + offset.lat,
+                longitude: realLocation.coords.longitude + offset.lng,
                 latitudeDelta: 0.001,
                 longitudeDelta: 0.001,
-            }, 1000);
-            setHasZoomed(true);
+            }, 500); // 500ms smooth animation
+
+            if (!hasZoomed) setHasZoomed(true);
         }
-    }, [realLocation, isMapReady]);
+    }, [realLocation, isMapReady, followUser, offset]); // Add followUser and offset dependency
 
     const notifyForSpawns = (newSpawns: SpawnLocation[]) => {
         const now = Date.now();
@@ -304,6 +307,7 @@ const MapScreen = ({ navigation }: any) => {
     };
 
     const recenterMap = () => {
+        setFollowUser(true); // Re-enable following
         if (realLocation && mapRef.current) {
             const playerLat = realLocation.coords.latitude + offset.lat;
             const playerLng = realLocation.coords.longitude + offset.lng;
@@ -364,6 +368,7 @@ const MapScreen = ({ navigation }: any) => {
                 showsUserLocation={false}
                 showsMyLocationButton={false}
                 onMapReady={() => setIsMapReady(true)}
+                onPanDrag={() => setFollowUser(false)} // Disable follow on manual drag
             >
                 {/* Custom Player Marker */}
                 <Marker coordinate={{ latitude: playerLat, longitude: playerLng }} title="You">
@@ -407,9 +412,9 @@ const MapScreen = ({ navigation }: any) => {
                 })}
             </MapView>
 
-            {/* Recenter Button */}
-            <TouchableOpacity style={styles.recenterBtn} onPress={recenterMap}>
-                <MaterialIcons name="my-location" size={24} color="black" />
+            {/* Recenter Button - different color if following */}
+            <TouchableOpacity style={[styles.recenterBtn, followUser && styles.followingBtn]} onPress={recenterMap}>
+                <MaterialIcons name={followUser ? "gps-fixed" : "gps-not-fixed"} size={24} color={followUser ? "white" : "black"} />
             </TouchableOpacity>
 
             {/* D-Pad Controls with Speed Toggle */}
@@ -487,6 +492,9 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
         zIndex: 10
     },
+    followingBtn: {
+        backgroundColor: '#2196f3', // Blue when following
+    },
     dpadContainer: {
         position: 'absolute',
         bottom: 100,
@@ -496,6 +504,9 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: 5
     },
+    speedToggle: { flexDirection: 'row', marginBottom: 5 },
+    speedBtn: { padding: 5, borderRadius: 15, marginHorizontal: 2 },
+    activeSpeed: { backgroundColor: '#ff5722' },
     dpadRow: { flexDirection: 'row' },
     dpadBtn: { padding: 10 },
     btnText: { fontSize: 20 },

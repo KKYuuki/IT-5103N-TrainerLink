@@ -8,10 +8,12 @@ import { useUser } from '../context/UserContext';
 interface Post {
     id: string;
     username: string;
-    pokemonName: string;
+    pokemonName?: string;
     pokemonId: number;
     timestamp: any; // Firestore Timestamp
     avatar?: 'boy' | 'girl';
+    questTitle?: string;
+    description?: string;
 }
 
 const CommunityScreen = () => {
@@ -53,13 +55,49 @@ const CommunityScreen = () => {
             const diffMins = Math.floor(diffMs / 60000);
             const diffHours = Math.floor(diffMs / 3600000);
             const diffDays = Math.floor(diffMs / 86400000);
-            
+
             if (diffMins < 1) timeString = 'Just now';
             else if (diffMins < 60) timeString = `${diffMins}m ago`;
             else if (diffHours < 24) timeString = `${diffHours}h ago`;
             else timeString = `${diffDays}d ago`;
         } else {
             timeString = 'Just now';
+        }
+
+        // Check if it's a Quest Completion
+        if (item.pokemonId === 0) {
+            return (
+                <View style={[styles.card, styles.questCardBorder]}>
+                    <View style={[styles.pokemonImageContainer, styles.questHeaderBg]}>
+                        <MaterialIcons name="emoji-events" size={80} color="#FFD700" />
+                        <View style={styles.pokemonOverlay} />
+                    </View>
+
+                    <View style={styles.cardContent}>
+                        <View style={styles.cardHeader}>
+                            <View style={[styles.trainerBadge, styles.questBadge]}>
+                                <MaterialIcons name="person" size={20} color="#f57f17" />
+                                <Text style={[styles.username, { color: '#f57f17' }]}>{item.username}</Text>
+                            </View>
+                            <View style={styles.timeContainer}>
+                                <MaterialIcons name="access-time" size={12} color="#999" />
+                                <Text style={styles.time}>{timeString}</Text>
+                            </View>
+                        </View>
+
+                        <View style={[styles.cardBody, styles.questBody]}>
+                            <View style={[styles.pokeballIcon, { backgroundColor: '#fff8e1' }]}>
+                                <MaterialIcons name="star" size={24} color="#FFD700" />
+                            </View>
+                            <View style={styles.catchInfo}>
+                                <Text style={[styles.catchLabel, { color: '#f57f17' }]}>QUEST COMPLETE</Text>
+                                <Text style={styles.pokemonName}>{item.questTitle}</Text>
+                                <Text style={styles.questDesc}>{item.description}</Text>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            );
         }
 
         const pokemonUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${item.pokemonId}.png`;
@@ -136,13 +174,13 @@ const CommunityScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: '#f8f9fa' 
+    container: {
+        flex: 1,
+        backgroundColor: '#f8f9fa'
     },
-    center: { 
-        flex: 1, 
-        justifyContent: 'center', 
+    center: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#f8f9fa'
     },
@@ -158,12 +196,14 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
     },
     headerContent: {
-        flexDirection: 'row',
+        flexDirection: 'row', // Align icon and text horizontally
         alignItems: 'center',
+        justifyContent: 'center',
     },
     headerTextContainer: {
-        marginLeft: 12,
-        flex: 1,
+        marginLeft: 15, // Space between icon and text
+        marginTop: 0,
+        alignItems: 'flex-start', // Left-align text block
     },
     headerTitle: {
         color: 'white',
@@ -197,9 +237,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         position: 'relative',
     },
-    pokemonImage: { 
-        width: 160, 
-        height: 160, 
+    pokemonImage: {
+        width: 160,
+        height: 160,
         resizeMode: 'contain',
     },
     pokemonOverlay: {
@@ -229,9 +269,9 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ffcdd2',
     },
-    username: { 
-        fontWeight: 'bold', 
-        fontSize: 15, 
+    username: {
+        fontWeight: 'bold',
+        fontSize: 15,
         color: '#d50000',
         marginLeft: 6,
     },
@@ -240,8 +280,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 4,
     },
-    time: { 
-        color: '#999', 
+    time: {
+        color: '#999',
         fontSize: 12,
         marginLeft: 4,
     },
@@ -271,9 +311,9 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
         marginBottom: 2,
     },
-    pokemonName: { 
-        fontWeight: 'bold', 
-        fontSize: 18, 
+    pokemonName: {
+        fontWeight: 'bold',
+        fontSize: 18,
         color: '#333',
         textTransform: 'capitalize',
         marginBottom: 2,
@@ -289,10 +329,10 @@ const styles = StyleSheet.create({
         marginTop: 100,
         paddingHorizontal: 40,
     },
-    emptyText: { 
-        textAlign: 'center', 
-        marginTop: 20, 
-        color: '#666', 
+    emptyText: {
+        textAlign: 'center',
+        marginTop: 20,
+        color: '#666',
         fontSize: 18,
         fontWeight: '600',
     },
@@ -301,6 +341,26 @@ const styles = StyleSheet.create({
         marginTop: 8,
         color: '#999',
         fontSize: 14,
+    },
+    // Quest Specific Styles
+    questCardBorder: {
+        borderWidth: 1,
+        borderColor: '#fff8e1',
+    },
+    questHeaderBg: {
+        backgroundColor: '#fff8e1',
+    },
+    questBadge: {
+        backgroundColor: '#fff8e1',
+        borderColor: '#ffe082',
+    },
+    questBody: {
+        backgroundColor: '#fff3e0',
+    },
+    questDesc: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 2,
     },
 });
 

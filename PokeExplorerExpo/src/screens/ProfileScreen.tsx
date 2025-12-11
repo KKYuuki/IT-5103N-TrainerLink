@@ -147,9 +147,10 @@ const styles = StyleSheet.create({
         transform: [{ rotate: '195deg' }],
     },
     headerContent: {
-        flexDirection: 'row',
+        flexDirection: 'column', // Stack vertically
         padding: 20,
-        alignItems: 'center',
+        alignItems: 'center', // Center horizontally
+        justifyContent: 'center',
     },
     avatar: {
         width: 70,
@@ -158,13 +159,14 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.25)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 16,
+        marginBottom: 16, // Add bottom margin since stacking
+        marginRight: 0, // Remove right margin
         borderWidth: 3,
         borderColor: 'white',
         elevation: 4,
     },
     userInfo: {
-        flex: 1
+        alignItems: 'center', // Center text info
     },
     userName: {
         color: 'white',

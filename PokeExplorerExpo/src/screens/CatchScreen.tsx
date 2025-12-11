@@ -15,7 +15,7 @@ const CatchScreen = ({ route, navigation }: any) => {
     const [permission, requestPermission] = useCameraPermissions();
     const [caught, setCaught] = useState(false);
     const { markCaught, isCaught } = usePokemon();
-    const { user, userData } = useUser();
+    const { user, userData, checkQuestProgress } = useUser();
 
     // Animation Values
     const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -113,6 +113,19 @@ const CatchScreen = ({ route, navigation }: any) => {
     const handleCatch = async () => {
         setCaught(true);
         markCaught(pokemonId); // Save to persistence
+
+        // Check Daily Quests (Fetch types first)
+        try {
+            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`);
+            const data = await response.json();
+            const types = data.types.map((t: any) => t.type.name);
+
+            checkQuestProgress('CATCH', { types });
+        } catch (e) {
+            console.log("Error checking quests", e);
+            // Even if fetch fails, count as generic catch
+            checkQuestProgress('CATCH');
+        }
 
         // Post to Community Feed (Fire and forget, only if new)
         if (user && !isCaught(pokemonId)) {

@@ -73,4 +73,19 @@ This project is a standard React Native app. It contains a native `android` dire
 
 ---
 
-*Gotta Catch 'Em All!* 🧢
+## ⚠️ Troubleshooting
+
+### "No Java compiler found" (Build Failed)
+If you see `org.gradle.api.internal.catalog.GeneratedClassCompilationException: No Java compiler found`, it means your computer is missing the **Java Development Kit (JDK)** or `JAVA_HOME` is not set.
+
+**Fix:**
+1.  **Install JDK 17**: Download specific JDK 17 (e.g. from Eclipse Adoptium).
+2.  **Set Environment Variable**:
+    *   **Windows**: Search "Edit the system environment variables" -> Environment Variables.
+    *   Add New System Variable: `JAVA_HOME` -> Path to your install (e.g., `C:\Program Files\Eclipse Adoptium\jdk-17...`).
+    *   Add `%JAVA_HOME%\bin` to your `Path` variable.
+3.  **Verify**: Open a new terminal and type `javac -version`. It must print `javac 17...`.
+
+### "Player accessed on wrong thread" (Android)
+If you see this red screen on reload:
+*   **Fix**: This is a known issue with `expo-av` and fast refresh. We have implemented a "Fire and Forget" cleanup fix in `MapScreen.tsx`. Just reload again.
