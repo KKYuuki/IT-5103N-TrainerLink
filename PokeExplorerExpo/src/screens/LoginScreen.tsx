@@ -23,8 +23,11 @@ const LoginScreen = ({ navigation }: any) => {
                 const querySnapshot = await getDocs(q);
 
                 if (querySnapshot.empty) {
-                    Alert.alert("Login Failed", "Username not found.");
+                    // Critical Fix: Clear loading BEFORE blocking Alert
                     setLoading(false);
+                    setTimeout(() => {
+                        Alert.alert("Login Failed", "Username not found. Please try again.");
+                    }, 100);
                     return;
                 }
 
@@ -50,8 +53,18 @@ const LoginScreen = ({ navigation }: any) => {
                 });
             }
         } catch (error: any) {
-            Alert.alert('Login Error', error.message);
+            console.log("Login Error", error);
             setLoading(false);
+
+            // Helpful errors
+            let msg = error.message;
+            if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+                msg = "Incorrect password or email.";
+            }
+
+            setTimeout(() => {
+                Alert.alert('Login Error', msg);
+            }, 100);
         }
     };
 
