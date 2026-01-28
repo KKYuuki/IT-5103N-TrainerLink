@@ -15,6 +15,8 @@ import {
     Modal
 } from 'react-native';
 import { getPokemonList, getPokemonDetails, PokemonListResult } from '../services/api';
+import { pokemonNames } from '../utils/pokemonNames';
+import { findClosestMatch } from '../utils/stringUtils';
 import { auth } from '../services/firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -101,16 +103,24 @@ const PokedexScreen = ({ navigation }: any) => {
     useSpeechRecognitionEvent("error", (event) => {
         console.log("Speech Recognition Error:", event.error);
         setIsListening(false);
-        if (event.error !== "no-speech" && event.error !== "no-match") {
+        if (event.error !== "no-speech") {
             Alert.alert("Voice Error", "Please try again.");
         }
     });
 
     const processVoiceCommand = async (text: string) => {
-        const cleanText = text.trim().toLowerCase();
+        let cleanText = text.trim().toLowerCase();
         setShowInputModal(false); // Close modal
 
-        // optimistic search
+        // Fuzzy Match Attempt
+        // We use a threshold of 5 because some voice inputs are very botched (e.g. "To Two Dial" -> Totodile is dist 4 or 5)
+        const closest = findClosestMatch(cleanText, pokemonNames, 5);
+        if (closest) {
+            console.log(`Fuzzy Match: "${cleanText}" -> "${closest}"`);
+            cleanText = closest.toLowerCase();
+        }
+
+        // optimistic search using the (potentially) corrected name
         setSearchQuery(cleanText);
         setSearching(true);
         try {
@@ -122,7 +132,12 @@ const PokedexScreen = ({ navigation }: any) => {
             });
             setSearchQuery('');
         } catch (error) {
-            Alert.alert("Not Found", `Could not find Pokemon: "${text}"`);
+            // If fuzzy match failed or API failed
+            if (closest && closest.toLowerCase() !== text.trim().toLowerCase()) {
+                Alert.alert("Not Found", `Could not find Pokemon: "${text}"\nDid you mean: ${closest}?`);
+            } else {
+                Alert.alert("Not Found", `Could not find Pokemon: "${text}"`);
+            }
         } finally {
             setSearching(false);
         }

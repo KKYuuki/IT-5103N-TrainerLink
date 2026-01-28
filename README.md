@@ -23,7 +23,26 @@
 
 ---
 
-## 🛠️ Technology Stack
+## � App Screenshots
+
+### 🏠 Home Screen
+![Home Screen](PokeExplorerExpo/assets/for-read-me/Home.jpg)
+
+### 🗺️ Map & Exploration
+![Map View](PokeExplorerExpo/assets/for-read-me/PokeAPI.jpg)
+
+### 📷 AR Catching Mode
+![AR Mode](PokeExplorerExpo/assets/for-read-me/AR.jpg)
+
+### 👤 Trainer Profile
+![Trainer Profile](PokeExplorerExpo/assets/for-read-me/Trainer_Profile.jpg)
+
+### 🌐 Community Features
+![Community](PokeExplorerExpo/assets/for-read-me/Community.jpg)
+
+---
+
+## �🛠️ Technology Stack
 
 *   **Core**: React Native (0.76)
 *   **Language**: TypeScript

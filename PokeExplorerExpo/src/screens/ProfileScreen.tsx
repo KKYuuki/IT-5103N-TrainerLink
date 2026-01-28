@@ -11,7 +11,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { pokemonNames } from '../utils/pokemonNames';
 
 // ... existing constants ...
-const POKEMON_IDS = Array.from({ length: 151 }, (_, i) => i + 1);
+const POKEMON_IDS = Array.from({ length: 1025 }, (_, i) => i + 1);
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const COLUMNS = 4;
 const ITEM_SIZE = SCREEN_WIDTH / COLUMNS;
@@ -23,7 +23,7 @@ const ProfileScreen = ({ navigation }: any) => {
     const renderPokemonItem = ({ item: id }: { item: number }) => {
         const caught = isCaught(id);
         const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
-        const name = pokemonNames[id - 1];
+        const name = pokemonNames[id - 1] || `Pokemon #${id}`;
 
         return (
             <View style={styles.gridItem}>
@@ -70,11 +70,11 @@ const ProfileScreen = ({ navigation }: any) => {
                         <View style={styles.statsRow}>
                             <View style={styles.statBadge}>
                                 <MaterialIcons name="catching-pokemon" size={16} color="#ff5722" />
-                                <Text style={styles.statText}>{caughtPokemon.length}/151</Text>
+                                <Text style={styles.statText}>{caughtPokemon.length}/1025</Text>
                             </View>
                             <View style={[styles.statBadge, { marginLeft: 8 }]}>
                                 <MaterialIcons name="star" size={16} color="#ff6f00" />
-                                <Text style={styles.statText}>{Math.round((caughtPokemon.length / 151) * 100)}%</Text>
+                                <Text style={styles.statText}>{Math.round((caughtPokemon.length / 1025) * 100)}%</Text>
                             </View>
                         </View>
                     </View>

@@ -118,12 +118,12 @@ const HomeScreen = ({ navigation }: any) => {
                             </View>
                             <View style={styles.statDivider} />
                             <View style={styles.statItem}>
-                                <Text style={styles.statNumber}>{151 - caughtPokemon.length}</Text>
+                                <Text style={styles.statNumber}>{1025 - caughtPokemon.length}</Text>
                                 <Text style={styles.statLabel}>Remaining</Text>
                             </View>
                             <View style={styles.statDivider} />
                             <View style={styles.statItem}>
-                                <Text style={styles.statNumber}>{Math.round((caughtPokemon.length / 151) * 100)}%</Text>
+                                <Text style={styles.statNumber}>{Math.round((caughtPokemon.length / 1025) * 100)}%</Text>
                                 <Text style={styles.statLabel}>Complete</Text>
                             </View>
                         </View>

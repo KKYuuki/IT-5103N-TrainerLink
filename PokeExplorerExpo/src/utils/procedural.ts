@@ -98,7 +98,20 @@ export const getBiomeAtLocation = (lat: number, lng: number): BiomeType => {
  * Pick a Pokemon ID based on Biome and Rarity
  */
 export const getPokemonForBiome = (biome: BiomeType, randomVal: number): number => {
-    // Gen 1 Ranges
+    // HYBRID SPAWN LOGIC:
+    // To solve repetition, we allow a 30% chance for a "Wildcard" spawn from the entire National Dex (1-1025).
+    // The other 70% respects the strict Biome lists to ensure "Flavor" (e.g. Water types near water).
+
+    if (randomVal < 0.3) {
+        // Map 0.0-0.3 to range 1-1025
+        // (randomVal / 0.3) normalizes it to 0-1
+        return Math.floor((randomVal / 0.3) * 1025) + 1;
+    }
+
+    // Renormalize the remaining 0.3-1.0 to 0-1 for the list selection
+    const listRandom = (randomVal - 0.3) / 0.7;
+
+    // Gen 1 Ranges (Legacy Biome Flavor)
     const waterList = [7, 54, 60, 72, 79, 86, 90, 98, 116, 118, 120, 129, 131]; // Squirtle, Psyduck, Poliwag...
     const forestList = [1, 10, 11, 13, 14, 43, 46, 48, 69, 123, 127]; // Bulbasaur, Bugs, Oddish, Bellsprout, Pinsir
     const grassList = [16, 19, 21, 29, 32, 25, 39, 43, 69]; // Pidgey, Rattata, Nidoran, Pikachu, Jigglypuff
@@ -116,8 +129,8 @@ export const getPokemonForBiome = (biome: BiomeType, randomVal: number): number 
     // Fallback if list empty (shouldn't happen)
     if (list.length === 0) list = [19];
 
-    // Use the random value (0-1) to pick from list
-    const index = Math.floor(randomVal * list.length);
+    // Use the normalized random value to pick from list
+    const index = Math.floor(listRandom * list.length);
     return list[index];
 };
 
