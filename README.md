@@ -23,26 +23,26 @@
 
 ---
 
-## � App Screenshots
+## App Screenshots
 
-### 🏠 Home Screen
-![Home Screen](PokeExplorerExpo/assets/for-read-me/Home.jpg)
+### Home Screen
+<img src="PokeExplorerExpo/assets/for-read-me/Home.jpg" alt="Home Screen" width="300"/>
 
-### 🗺️ Map & Exploration
-![Map View](PokeExplorerExpo/assets/for-read-me/PokeAPI.jpg)
+### Map & Exploration
+<img src="PokeExplorerExpo/assets/for-read-me/PokeAPI.jpg" alt="Map View" width="300"/>
 
-### 📷 AR Catching Mode
-![AR Mode](PokeExplorerExpo/assets/for-read-me/AR.jpg)
+### AR Catching Mode
+<img src="PokeExplorerExpo/assets/for-read-me/AR.jpg" alt="AR Mode" width="300"/>
 
-### 👤 Trainer Profile
-![Trainer Profile](PokeExplorerExpo/assets/for-read-me/Trainer_Profile.jpg)
+### Trainer Profile
+<img src="PokeExplorerExpo/assets/for-read-me/Trainer_Profile.jpg" alt="Trainer Profile" width="300"/>
 
-### 🌐 Community Features
-![Community](PokeExplorerExpo/assets/for-read-me/Community.jpg)
+### Community Features
+<img src="PokeExplorerExpo/assets/for-read-me/Community.jpg" alt="Community" width="300"/>
 
 ---
 
-## �🛠️ Technology Stack
+## Technology Stack
 
 *   **Core**: React Native (0.76)
 *   **Language**: TypeScript
@@ -91,20 +91,3 @@ This project is a standard React Native app. It contains a native `android` dire
     ```
 
 ---
-
-## ⚠️ Troubleshooting
-
-### "No Java compiler found" (Build Failed)
-If you see `org.gradle.api.internal.catalog.GeneratedClassCompilationException: No Java compiler found`, it means your computer is missing the **Java Development Kit (JDK)** or `JAVA_HOME` is not set.
-
-**Fix:**
-1.  **Install JDK 17**: Download specific JDK 17 (e.g. from Eclipse Adoptium).
-2.  **Set Environment Variable**:
-    *   **Windows**: Search "Edit the system environment variables" -> Environment Variables.
-    *   Add New System Variable: `JAVA_HOME` -> Path to your install (e.g., `C:\Program Files\Eclipse Adoptium\jdk-17...`).
-    *   Add `%JAVA_HOME%\bin` to your `Path` variable.
-3.  **Verify**: Open a new terminal and type `javac -version`. It must print `javac 17...`.
-
-### "Player accessed on wrong thread" (Android)
-If you see this red screen on reload:
-*   **Fix**: This is a known issue with `expo-av` and fast refresh. We have implemented a "Fire and Forget" cleanup fix in `MapScreen.tsx`. Just reload again.
